@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<!-- 
+	수정일                 수정자                          수정내용
+  =========     =======    =================================================
+  2011.8.26   		 서준식     	 	SSO 로그인을 위한 쿼리 추가
+  2011.09.27   		 서준식              컬럼 변경 SUB_DN 을  CRTFC_DN_VALUE 로 변경
+  2011.09.28   		 서준식              컬럼 변경 entrprsmber_id 을  ENTRPRS_MBER_ID 로 변경
+-->
+<sqlMap namespace="adminDAO">
+
+<!-- 	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/> -->
+<!-- 	<typeAlias  alias="loginVO" type="egovframework.com.cmm.LoginVO"/> -->
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+
+<!-- 로그인 처리를 위한 resultMap --> 
+<!-- 	<resultMap id="login" class="egovframework.com.cmm.LoginVO"> -->
+<!-- 		<result property="id" column="id" columnIndex="1"/> -->
+<!-- 		<result property="name" column="name" columnIndex="2"/> -->
+<!-- 		<result property="ihidNum" column="ihidNum" columnIndex="3"/> -->
+<!-- 		<result property="email" column="email" columnIndex="4"/> -->
+<!-- 		<result property="password" column="password" columnIndex="5"/> -->
+<!-- 		<result property="userSe" column="userSe" columnIndex="6"/> -->
+<!-- 		<result property="orgnztId" column="orgnztId" columnIndex="7"/> -->
+<!-- 		<result property="uniqId" column="uniqId" columnIndex="8"/>		 -->
+<!-- 	</resultMap> -->
+	
+<!-- 아이디 찾기를 위한 resultMap -->
+<!-- 	<resultMap id="id" class="egovframework.com.cmm.LoginVO"> -->
+<!-- 		<result property="id" column="id" columnIndex="1"/> -->
+<!-- 	</resultMap> -->
+	
+<!-- 비밀번호 처리를 위한 resultMap -->
+<!-- 	<resultMap id="password" class="egovframework.com.cmm.LoginVO"> -->
+<!-- 		<result property="password" column="password" columnIndex="1"/> -->
+<!-- 	</resultMap> -->
+	
+	<resultMap id="getAminInfoList" class="box">
+		<result property="user_name" column="user_name" nullValue=""/>
+		<result property="user_id" column="user_id" nullValue=""/>
+		<result property="user_pwd" column="user_pwd" nullValue=""/>
+		<result property="user_email" column="user_email" nullValue=""/>
+		<result property="mac_address" column="mac_address" nullValue=""/>
+		<result property="user_hp" column="user_hp" nullValue=""/>
+		<result property="comp_type" column="comp_type" nullValue=""/>
+		<result property="user_auth" column="user_auth" nullValue=""/>
+		<result property="reg_date" column="reg_date" nullValue=""/>
+		<result property="device_del" column="device_del" nullValue=""/>
+		<result property="use_yn" column="use_yn" nullValue=""/>
+		<result property="fst_bizplc_cd" column="fst_bizplc_cd" nullValue=""/>
+		<result property="scd_bizplc_cd" column="scd_bizplc_cd" nullValue=""/>
+		<result property="fst_bizplc_nm" column="fst_bizplc_nm" nullValue=""/>
+		<result property="scd_bizplc_nm" column="scd_bizplc_nm" nullValue=""/>
+</resultMap>
+	
+<!-- 순시자 리스트 	 -->
+	<select id="adminDAO.getAdminList" parameterClass="box" resultMap="getAminInfoList">
+			SELECT * 
+			FROM ( SELECT rownum rn, tb.* 
+					FROM (
+							SELECT * 
+							FROM (
+									SELECT aa.user_name
+											, aa.user_id
+											, aa.user_pwd
+											, aa.user_auth
+											, aa.user_email
+											, aa.mac_address
+											, aa.user_hp
+											, aa.comp_type
+											, aa.reg_date
+											, aa.device_del
+											, aa.use_yn
+											, aa.fst_bizplc_cd
+											, aa.scd_bizplc_cd
+											, (SELECT bb.fst_bizplc_cd_nm from m_bizplc_t bb WHERE bb.fst_bizplc_cd = aa.fst_bizplc_cd AND bb.scd_bizplc_cd = aa.scd_bizplc_cd AND ROWNUM &lt; 2) AS fst_bizplc_nm
+                                            , (SELECT bb.scd_bizplc_cd_nm from m_bizplc_t bb WHERE bb.fst_bizplc_cd = aa.fst_bizplc_cd AND bb.scd_bizplc_cd = aa.scd_bizplc_cd AND ROWNUM &lt; 2) AS scd_bizplc_nm 
+									FROM m_user_t aa
+									WHERE user_idx is not null
+									<isNotEmpty property="scd_bizplc_cd">
+										AND aa.fst_bizplc_cd IN ( SELECT fst_bizplc_cd FROM m_bizplc_t WHERE fst_bizplc_cd = #fst_bizplc_cd# AND scd_bizplc_cd = #scd_bizplc_cd#)
+										AND aa.fst_bizplc_cd = #fst_bizplc_cd#
+										AND aa.scd_bizplc_cd = #scd_bizplc_cd#
+									</isNotEmpty>
+									<isNotEmpty property="search_user_id">
+										AND aa.user_id like '%' || #search_user_id# || '%' 
+									</isNotEmpty>
+									<isNotEmpty property="search_user_name">
+										AND aa.user_name like '%' || #search_user_name# || '%' 
+									</isNotEmpty>
+									<isNotEmpty property="search_user_email">
+										AND aa.user_email like '%' || #search_user_email# || '%' 
+									</isNotEmpty>
+									) ORDER BY reg_date
+							)tb
+					)
+					<isNotEmpty property="firstIndex"> 
+						WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+					</isNotEmpty>
+									
+	</select>
+	
+<!-- 순시자 총 튜플 -->
+	<select id="adminDAO.getAdminTotalCount" parameterClass="box" resultClass="int">
+		SELECT count(*) AS totcnt
+		FROM m_user_t
+		WHERE user_idx is not null
+		<isNotEmpty property="scd_bizplc_cd">
+			AND fst_bizplc_cd IN ( SELECT fst_bizplc_cd FROM m_bizplc_t WHERE fst_bizplc_cd = #fst_bizplc_cd# AND scd_bizplc_cd = #scd_bizplc_cd#)
+			AND fst_bizplc_cd = #fst_bizplc_cd#
+			AND scd_bizplc_cd = #scd_bizplc_cd#
+		</isNotEmpty>
+		<isNotEmpty property="search_user_id">
+			AND user_id like '%' || #search_user_id# || '%' 
+		</isNotEmpty>
+		<isNotEmpty property="search_user_name">
+			AND user_name like '%' || #search_user_name# || '%' 
+		</isNotEmpty>
+		<isNotEmpty property="search_user_email">
+			AND user_email like '%' || #search_user_email# || '%' 
+		</isNotEmpty>
+	</select>
+	
+<!-- 순시자 정보 -->
+	<select id="adminDAO.getAdminInfo" parameterClass="box" resultMap="getAminInfoList">
+		SELECT aa.user_name
+					, aa.user_id
+					, aa.user_pwd
+					, aa.user_auth
+					, aa.user_email
+					, aa.mac_address
+					, aa.user_hp
+					, aa.comp_type
+					, aa.reg_date
+					, aa.device_del
+					, aa.use_yn
+					, aa.fst_bizplc_cd
+					, aa.scd_bizplc_cd
+					, (SELECT bb.fst_bizplc_cd_nm from m_bizplc_t bb WHERE bb.fst_bizplc_cd = aa.fst_bizplc_cd AND bb.scd_bizplc_cd = aa.scd_bizplc_cd AND ROWNUM &lt; 2) AS fst_bizplc_nm
+					, (SELECT bb.scd_bizplc_cd_nm from m_bizplc_t bb WHERE bb.fst_bizplc_cd = aa.fst_bizplc_cd AND bb.scd_bizplc_cd = aa.scd_bizplc_cd AND ROWNUM &lt; 2) AS scd_bizplc_nm 
+		FROM m_user_t aa
+		WHERE aa.user_id = #user_id#
+</select>
+
+<!-- 순시자 등록 -->
+	<insert id="adminDAO.setAdminInsert" parameterClass="box">
+	INSERT INTO m_user_t (user_idx
+									, fst_bizplc_cd
+									, scd_bizplc_cd
+									, user_name
+									, user_id
+									, user_pwd
+									, user_tel
+									, user_hp
+									, user_email
+									<isNotEmpty property="user_auth">
+										, user_auth
+									</isNotEmpty>
+									, comp_type
+									, conf_state
+									, reg_date
+									<isNotEmpty property="user_yn">
+										, use_yn
+									</isNotEmpty>
+									) VALUES (seq_m_user_t.nextval
+															, #fst_bizplc_cd#
+															, #scd_bizplc_cd#
+															, #user_name#
+															, #user_id#
+															, #user_pwd#
+															, #user_tel#
+															, #user_hp#
+															, #user_email#
+															<isNotEmpty property="user_auth">
+																, #user_auth#
+															</isNotEmpty>
+															, '01'
+															, 1
+															, sysdate
+															<isNotEmpty property="user_yn">
+																, #use_yn#
+															</isNotEmpty>
+															)
+	</insert>          
+	   
+<!-- 순시자 수정 -->
+	<update id="adminDAO.setAdminUpdate" parameterClass="box">
+		UPDATE m_user_t
+		SET user_hp = #user_hp#
+			<isNotEmpty property="fst_bizplc_cd"> 
+				, fst_bizplc_cd = #fst_bizplc_cd#
+			</isNotEmpty>
+			<isNotEmpty property="scd_bizplc_cd">
+				, scd_bizplc_cd = #scd_bizplc_cd#
+			</isNotEmpty>
+			, user_email = #user_email#
+			, use_yn = #use_yn#
+			, user_auth = #user_auth#
+		WHERE user_id = #user_id#	
+	</update>
+	
+<!-- 순시자 삭제	 -->
+	<delete id="adminDAO.setAdminDelete" parameterClass="box">
+		DELETE FROM 	m_user_t
+		WHERE user_id = #user_id#
+	</delete>
+
+<!-- 사업소명 호출 -->
+	<select id="adminDAO.getBizplcNameInfo" parameterClass="box" resultClass="box">
+		SELECT fst_bizplc_cd_nm
+				, scd_bizplc_cd_nm 
+		FROM m_bizplc_t 
+		WHERE fst_bizplc_cd=$fst_bizplc_cd$ 
+		AND scd_bizplc_cd=$scd_bizplc_cd$
+		AND rownum &lt; 2  
+	</select>
+<!-- 순시자중 토큰 있는 유저 검색	 -->	     
+<resultMap id="getAminInfoDevideList" class="box">
+		<result property="user_name" column="user_name" nullValue=""/>
+		<result property="user_id" column="user_id" nullValue=""/>
+		<result property="user_pwd" column="user_pwd" nullValue=""/>
+		<result property="user_email" column="user_email" nullValue=""/>
+		<result property="mac_address" column="mac_address" nullValue=""/>
+		<result property="user_hp" column="user_hp" nullValue=""/>
+		<result property="comp_type" column="comp_type" nullValue=""/>
+		<result property="user_auth" column="user_auth" nullValue=""/>
+		<result property="reg_date" column="reg_date" nullValue=""/>
+		<result property="device_token" column="device_token" nullValue=""/>		
+		<result property="use_yn" column="use_yn" nullValue=""/>
+	</resultMap>	     
+	<select id="adminDAO.getAdminIsNotTokenList" parameterClass="box"	resultMap="getAminInfoDevideList">
+		SELECT user_name
+		, user_id
+		, user_pwd
+		, user_auth
+		, user_email
+		, mac_address
+		, user_hp
+		, comp_type
+		, reg_date
+		, device_token
+		, use_yn
+		FROM m_user_t
+		WHERE device_token IS NOT NULL 
+	</select>
+
+<!-- 순시자중 토큰 삭제	 -->	
+	<update id="adminDAO.setDeviceDel" parameterClass="box" >
+	UPDATE m_user_t SET
+	<isEqual property="device_del" compareValue="3"> <!--앱에서 삭제 확인 했을 때 device_token = null  -->
+		device_token = null ,
+	</isEqual>
+		device_del = #device_del#
+		WHERE user_id = #user_id#
+</update>
+	
+<!-- 순시자중 토큰 검색	 -->
+	<resultMap id="getUserToken" class="box">
+		<result property="user_id" column="user_id" />
+		<result property="device_token" column="device_token" />
+	</resultMap>
+	
+	<select id="adminDAO.getUserToken" parameterClass="box"
+		resultMap="getUserToken">
+		SELECT device_token , user_id FROM m_user_t
+		WHERE user_id = #user_id#
+	</select>
+	
+	<resultMap id="getUserTokenList" class="box">
+		<result property="user_name" column="user_name" nullValue=""/>
+		<result property="device_token" column="device_token" nullValue=""/>
+		<result property="fst_bizplc_cd" column="fst_bizplc_cd" nullValue=""/>
+		<result property="scd_bizplc_cd" column="scd_bizplc_cd" nullValue=""/>
+	</resultMap>
+	<select id="adminDAO.getUserTokenList" parameterClass="box" resultMap="getUserTokenList">
+SELECT
+		distinct user_t.user_name ,
+		device_token ,
+		user_t.fst_bizplc_cd ,
+		user_t.scd_bizplc_cd 
+		FROM
+		m_user_t user_t INNER JOIN m_bizplc_t bizplc
+		ON user_t.fst_bizplc_cd = bizplc.fst_bizplc_cd
+		AND user_t.scd_bizplc_cd = bizplc.scd_bizplc_cd
+		WHERE device_token IS NOT NULL
+		<isNotEmpty property="fst_bizplc_cd">
+			AND bizplc.fst_bizplc_cd = #fst_bizplc_cd#
+		</isNotEmpty>
+		<isNotEmpty property="scd_bizplc_cd">
+			AND bizplc.scd_bizplc_cd = #scd_bizplc_cd#
+		</isNotEmpty>
+</select>
+
+	<select id="adminDAO.isExistToUserid" parameterClass="box" resultClass="box">
+		SELECT user_id 
+		FROM m_user_t
+		WHERE user_id = #user_id# 
+	</select>
+	
+</sqlMap>

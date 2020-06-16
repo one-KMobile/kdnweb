@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<!-- 
+	수정일                 수정자                          수정내용
+  =========     =======    =================================================
+  2011.8.26   		 서준식     	 	SSO 로그인을 위한 쿼리 추가
+  2011.09.27   		 서준식              컬럼 변경 SUB_DN 을  CRTFC_DN_VALUE 로 변경
+  2011.09.28   		 서준식              컬럼 변경 entrprsmber_id 을  ENTRPRS_MBER_ID 로 변경
+-->
+<sqlMap namespace="nfcDAO">
+
+<!-- 	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/> -->
+<!-- 	<typeAlias  alias="loginVO" type="egovframework.com.cmm.LoginVO"/> -->
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+
+<!-- 로그인 처리를 위한 resultMap --> 
+<!-- 	<resultMap id="login" class="egovframework.com.cmm.LoginVO"> -->
+<!-- 		<result property="id" column="id" columnIndex="1"/> -->
+<!-- 		<result property="name" column="name" columnIndex="2"/> -->
+<!-- 		<result property="ihidNum" column="ihidNum" columnIndex="3"/> -->
+<!-- 		<result property="email" column="email" columnIndex="4"/> -->
+<!-- 		<result property="password" column="password" columnIndex="5"/> -->
+<!-- 		<result property="userSe" column="userSe" columnIndex="6"/> -->
+<!-- 		<result property="orgnztId" column="orgnztId" columnIndex="7"/> -->
+<!-- 		<result property="uniqId" column="uniqId" columnIndex="8"/>		 -->
+<!-- 	</resultMap> -->
+	
+<!-- NFC 목록 resultMap -->
+	<resultMap id="nfcInfo" class="box">
+		<result property="nfc_uid" column="nfc_uid" nullValue=""/>
+		<result property="tag" column="tag" nullValue=""/>
+		<result property="fnct_lc_dtls" column="fnct_lc_dtls" nullValue=""/>
+		<result property="fnct_lc_no" column="fnct_lc_no" nullValue=""/>
+		<result property="eqp_nm" column="eqp_nm" nullValue=""/>
+		<result property="remarks" column="remarks" nullValue=""/>
+		<result property="status" column="status" nullValue=""/>
+		<result property="reg_date" column="reg_date" nullValue=""/>
+		<result property="eqp_no" column="eqp_no" nullValue=""/>
+		<result property="work_status" column="work_status" nullValue=""/>
+	</resultMap>
+
+<!-- NFC 목록 -->
+	<select id="nfcDAO.getNfcList" parameterClass="box" resultMap="nfcInfo">
+		SELECT * 
+		FROM ( SELECT rownum rn, tb.* 
+					FROM (SELECT * 
+							FROM (
+									SELECT nfc.nfc_uid
+									        , nfc.fnct_lc_dtls
+									        , nfc.fnct_lc_no
+									        , nfc.eqp_nm
+									        , nfc.remarks
+									        , nfc.tag
+									        , record.status
+									        , record.work_status
+									        , nfc.reg_date
+									        , nfc.eqp_no
+									        ,REPLACE(REPLACE(REPLACE(nfc.eqp_nm,
+											nfc.fnct_lc_dtls,
+                                            ''),
+                                            '호 철탑',
+                                            ''),
+                                            '호 철',
+                                            '') as tower_idx
+									FROM m_nfc_t nfc INNER JOIN m_nfc_record_t record ON nfc.tag = record.tag
+									
+									WHERE nfc.tag IS NOT NULL
+									<isNotEmpty prepend="AND" property="fst_bizplc_cd">
+										nfc.fnct_lc_no IN (SELECT fnct_lc_no FROM  op_eqp_header_t WHERE fst_bizplc_cd = #fst_bizplc_cd#)
+									</isNotEmpty>
+									<isNotEmpty prepend="AND" property="scd_bizplc_cd">
+										nfc.fnct_lc_no IN (SELECT fnct_lc_no FROM op_eqp_header_t WHERE scd_bizplc_cd = #scd_bizplc_cd#)
+									</isNotEmpty>
+									<isNotEmpty prepend="AND" property="fnct_lc_no">
+										nfc.fnct_lc_no = #fnct_lc_no#
+									</isNotEmpty>
+									<isNotEmpty prepend="AND" property="eqp_nm">
+										REPLACE(REPLACE(REPLACE(nfc.eqp_nm,
+						                nfc.fnct_lc_dtls,
+						                ''),
+						                '호 철탑',
+						                ''),
+						                '호 철',
+						                '') like '%' || $eqp_nm$ || '%' 
+									</isNotEmpty>
+									) ORDER BY fnct_lc_no
+									<isEqual property="is_search_tower_idx" compareValue="Y">
+										, to_number(tower_idx)
+									</isEqual>
+									<isEqual property="is_search_tower_idx" compareValue="N">
+										, tower_idx asc
+									</isEqual>
+							) tb 
+					)
+					<isNotEmpty property="firstIndex"> 
+						WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+					</isNotEmpty>         
+	</select>
+	
+<!-- NFC 총튜플 수	 -->
+	<select id="nfcDAO.getNfcTotalCount" parameterClass="box" resultClass="int">
+		SELECT count(*) totcnt
+		FROM m_nfc_t nfc INNER JOIN m_nfc_record_t record ON nfc.tag = record.tag
+		WHERE nfc.tag IS NOT NULL
+		<isNotEmpty prepend="AND" property="fst_bizplc_cd">
+			nfc.fnct_lc_no IN (SELECT fnct_lc_no FROM  op_eqp_header_t WHERE fst_bizplc_cd = #fst_bizplc_cd#)
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="scd_bizplc_cd">
+			nfc.fnct_lc_no IN (SELECT fnct_lc_no FROM op_eqp_header_t WHERE scd_bizplc_cd = #scd_bizplc_cd#)
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="fnct_lc_no">
+			nfc.fnct_lc_no = #fnct_lc_no#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="eqp_nm">
+			REPLACE(REPLACE(REPLACE(nfc.eqp_nm,
+						                nfc.fnct_lc_dtls,
+						                ''),
+						                '호 철탑',
+						                ''),
+						                '호 철',
+						                '') like '%' || #eqp_nm# || '%' 
+		</isNotEmpty>   
+	</select>
+	
+<!-- NFC 존재여부 체크 -->	
+	<select id="nfcDAO.isExistNfc" parameterClass="box" resultClass="int">
+		SELECT count(*) totcnt
+		FROM m_nfc_t nfc INNER JOIN m_nfc_record_t record ON nfc.tag = record.tag
+		WHERE nfc.tag IS NOT NULL
+	</select>
+
+<!-- NFC 정보 -->
+	<select id="nfcDAO.getNfcInfo" parameterClass="box" resultMap="nfcInfo">
+	<![CDATA[
+		SELECT nfc.nfc_uid
+		        , nfc.fnct_lc_no
+		        , nfc.fnct_lc_dtls
+		        , nfc.eqp_nm
+		        , nfc.remarks
+		        , nfc.tag
+		        , record.status
+		        , record.work_status
+		        , nfc.reg_date
+		        , nfc.eqp_no
+		FROM m_nfc_t nfc INNER JOIN m_nfc_record_t record ON nfc.tag = record.tag
+		WHERE nfc.tag = #tag#
+	]]>
+	</select>
+	
+<!-- NFC 생성	 -->
+	<insert id="nfcDAO.setNfcInsert" parameterClass="box">
+		INSERT INTO m_nfc_t (nfc_idx
+									, tag
+									, fnct_lc_no
+									, fnct_lc_dtls
+									, eqp_no
+									, eqp_nm
+									<isNotEmpty property="remarks">
+										, remarks
+									</isNotEmpty>
+									, reg_date
+									) VALUES (seq_m_nfc_t.nextval
+												, #tag#
+												, #fnct_lc_no#
+												, #fnct_lc_dtls#
+												, #eqp_no#
+												, #eqp_nm#
+												<isNotEmpty property="remarks">
+													, #remarks#
+												</isNotEmpty>
+												, SYSDATE
+												)
+	</insert>
+	
+<!-- NFC 이력 생성	 -->
+	<insert id="nfcDAO.setNfcRecordInsert" parameterClass="box">
+		INSERT INTO m_nfc_record_t (nfc_record_idx
+												, tag
+												<isNotEmpty property="remarks">
+													, remarks
+												</isNotEmpty>
+												, status
+												, work_status
+												, reg_date
+												) VALUES (seq_m_nfc_record_t.nextval
+															, #tag#
+															<isNotEmpty property="remarks">
+																, #remarks#
+															</isNotEmpty>
+															, #status#
+															, '생성'
+															, SYSDATE
+															)
+	</insert>
+	
+<!-- NFC 수정	 -->
+	<update id="nfcDAO.setNfcUpdate" parameterClass="box">
+		UPDATE m_nfc_t
+		SET tag = #tag#
+			<isNotEmpty property="remarks">
+				, remarks = #remarks#
+			</isNotEmpty>
+		WHERE tag = #tag#			
+	</update>
+	
+<!-- NFC 이력 수정	 -->
+	<update id="nfcDAO.setNfcRecordUpdate" parameterClass="box">
+		UPDATE m_nfc_record_t
+		SET status = #status#
+			, work_status = '수정'
+			<isNotEmpty property="remarks">
+				, remarks = #remarks#
+			</isNotEmpty>
+		WHERE tag = #tag#	
+	</update>	
+	
+<!-- 사업소 	 -->
+	<resultMap id="bizplcInfo" class="box">
+		<result property="fst_bizplc_cd_nm" column="fst_bizplc_cd_nm" nullValue=""/>
+		<result property="scd_bizplc_cd_nm" column="scd_bizplc_cd_nm" nullValue=""/>
+	</resultMap>
+<!-- 1차사업소, 2차사업소명 호출	 -->
+	<select id="nfcDAO.getSelectedBizplc" parameterClass="box" resultMap="bizplcInfo">
+		 SELECT fst_bizplc_cd_nm
+		 			, scd_bizplc_cd_nm
+		 FROM m_bizplc_t 
+		 WHERE fst_bizplc_cd = #fst_bizplc_cd# 
+		 AND scd_bizplc_cd = #scd_bizplc_cd#
+		 AND rownum &lt; 2
+	</select>
+	
+<!-- 선로	 -->
+	<resultMap id="tracksInfo" class="box">
+		<result property="fnct_lc_dtls" column="fnct_lc_dtls" nullValue=""/>
+	</resultMap>
+	
+<!-- 선로명 호출	 -->
+	<select id="nfcDAO.getSelectedTracks" parameterClass="box" resultMap="tracksInfo">
+		SELECT FNCT_LC_DTLS
+        FROM op_function_header_t 
+        WHERE fnct_lc_no=#fnct_lc_no#
+	</select>
+	
+<!-- 지지물	 -->
+	<resultMap id="towerInfo" class="box">
+		<result property="eqp_nm" column="eqp_nm" nullValue=""/>
+		<result property="tower_idx" column="tower_idx" nullValue=""/>
+		<result property="eqp_no" column="eqp_no" nullValue=""/>
+	</resultMap>
+	
+	<select id="nfcDAO.getTowerList" parameterClass="box" resultMap="towerInfo">
+		        SELECT 
+        REPLACE(REPLACE(REPLACE(tower.EQP_NM,
+                tracks.FNCT_LC_DTLS,
+                ''),
+                '호 철탑',
+                ''),
+                '호 철',
+                '') as tower_idx
+                , tower.eqp_nm    
+                , tower.eqp_no
+         FROM m_trans_tower tower 
+           
+            INNER JOIN
+                op_function_header_t tracks    
+                    ON tower.fnct_lc_no = tracks.fnct_lc_no    
+         WHERE tower.FNCT_LC_NO = #fnct_lc_no#
+         and eqp_ty_cd = 'T001'
+         order by tower_idx
+	</select>
+	
+	<select id="nfcDAO.getSelectedTower" parameterClass="box" resultClass="box"> 
+		SELECT eqp_no
+				, eqp_nm
+		FROM op_eqp_header_t
+		WHERE eqp_no = #eqp_no#
+	</select>
+	
+	<select id="nfcDAO.getNfcRecordList" parameterClass="box" resultClass="box">
+		SELECT nfc_uid
+				, tag
+				, to_char(reg_date) as reg_date 
+				, work_status
+		FROM m_nfc_record_t
+	</select>
+	
+<!-- NFC 일괄 입력 -->
+	<insert id="nfcDAO.setBatchNfcInsert" parameterClass="box">
+		INSERT INTO m_nfc_t(nfc_idx, tag, fnct_lc_no, fnct_lc_dtls, eqp_no, eqp_nm, reg_date)
+		SELECT seq_m_nfc_t.nextval
+					, dd.fnct_lc_no || '_' || dd.eqp_no || '_' || dd.newnum || '_' || dd.rn as tag
+					, dd.fnct_lc_no
+		            , dd.fnct_lc_dtls
+		            , dd.eqp_no
+		            , dd.eqp_nm
+		            , sysdate
+		FROM (
+				SELECT  cc.newnum
+				            , cc.fnct_lc_no
+				            , cc.fnct_lc_dtls
+				            , cc.eqp_no
+				            , cc.eqp_nm
+				            , LPAD(cc.rn + rownum, 5, '0') as rn 
+				FROM (
+				        SELECT  bb.*
+				                    , LPAD(linenum,4,'0') newnum
+
+				                FROM (SELECT aa.fnct_lc_no
+				                                    , aa.fnct_lc_dtls
+				                                    , aa.eqp_no
+				                                    , aa.eqp_nm
+				                                    , tower_idx
+				                                    <isEqual property="is_init" compareValue="Y">
+				                                    	, ROW_NUMBER() OVER(ORDER BY fnct_lc_no) linenum
+				                                    </isEqual>
+				                                    <isEqual property="is_init" compareValue="N">
+				                                    	, to_number(#tracks_cnt#) as linenum
+				                                    </isEqual>
+				                                    , to_number(#total_cnt#) as rn
+				                        FROM ( SELECT tower.fnct_lc_no
+				                                            , tracks.fnct_lc_dtls
+				                                            , tower.eqp_no
+				                                            , tower.eqp_nm
+				                                            , (SELECT oei.chartr_value FROM op_eqp_item_t oei WHERE oei.eqp_no = tower.eqp_no AND oei.chartr_cd = 'PM-A-0002') AS tower_idx
+				                                    FROM op_eqp_header_t tower INNER JOIN op_function_header_t tracks ON tracks.fnct_lc_no = tower.fnct_lc_no
+				                                    WHERE tower.eqp_ty_cd = 'T001' 
+				                                    AND tower.fnct_lc_no = #FNCT_LC_NO#
+				                                  ) aa 
+				                          ORDER BY aa.fnct_lc_no, aa.tower_idx asc
+				                        ) bb
+				        )cc
+				)dd
+<!-- 		INSERT INTO m_nfc_t (nfc_idx -->
+<!-- 									, tag -->
+<!-- 									, fnct_lc_no -->
+<!-- 									, fnct_lc_dtls -->
+<!-- 									, eqp_no -->
+<!-- 									, eqp_nm -->
+<!-- 									, reg_date) -->
+<!-- 		SELECT seq_nfc.nextval -->
+<!-- 				, tower.fnct_lc_no || '_' || tower.eqp_no || '_' || #fnct_lc_no_count# ||'_' || #all_no# as tag -->
+<!-- 				, tower.fnct_lc_no -->
+<!-- 				, track.fnct_lc_dtls -->
+<!-- 				, tower.eqp_no -->
+<!-- 				, tower.eqp_nm -->
+<!-- 				, sysdate  -->
+<!-- 		FROM op_eqp_header_t tower INNER JOIN op_function_header_t track ON tower.fnct_lc_no = track.fnct_lc_no  -->
+<!-- 		WHERE tower.eqp_ty_cd = 'T001' -->
+	</insert>
+	
+<!-- NFC 이력 일괄 입력 -->
+	<insert id="nfcDAO.setBatchNfcRecordInsert" parameterClass="box">
+		INSERT INTO m_nfc_record_t(nfc_record_idx, tag, status, work_status, reg_date)
+		SELECT seq_m_nfc_record_t.nextval
+				, dd.fnct_lc_no || '_' || dd.eqp_no || '_' || dd.newnum || '_' || dd.rn as tag
+				, 'U'
+				, '생성'
+				, sysdate
+		FROM (				
+				SELECT  cc.fnct_lc_no
+							, cc.eqp_no
+							, cc.newnum
+				            , cc.fnct_lc_no || '_' || cc.eqp_no || '_' || cc.newnum || '_' || rn as tag
+				            , LPAD(cc.rn + rownum, 5, '0') as rn
+				FROM (
+				        SELECT  bb.*
+				                    , LPAD(linenum,4,'0') newnum 
+				                FROM (SELECT aa.fnct_lc_no
+				                                    , aa.fnct_lc_dtls
+				                                    , aa.eqp_no
+				                                    , aa.eqp_nm
+				                                    , tower_idx
+				                                    <isEqual property="is_init" compareValue="Y">
+				                                    	, ROW_NUMBER() OVER(ORDER BY fnct_lc_no) linenum
+				                                    </isEqual>
+				                                    <isEqual property="is_init" compareValue="N">
+				                                    	, to_number(#tracks_cnt#) as linenum
+				                                    </isEqual>
+				                                    , to_number(#total_cnt#) as rn 
+				                        FROM ( SELECT tower.fnct_lc_no
+				                                            , tracks.fnct_lc_dtls
+				                                            , tower.eqp_no
+				                                            , tower.eqp_nm
+				                                            , (SELECT oei.chartr_value FROM op_eqp_item_t oei WHERE oei.eqp_no = tower.eqp_no AND oei.chartr_cd = 'PM-A-0002') AS tower_idx
+				                                    FROM op_eqp_header_t tower INNER JOIN op_function_header_t tracks ON tracks.fnct_lc_no = tower.fnct_lc_no
+				                                    WHERE tower.eqp_ty_cd = 'T001' 
+				                                    AND tower.fnct_lc_no = #FNCT_LC_NO#
+				                                  ) aa 
+				                          ORDER BY aa.fnct_lc_no, aa.tower_idx asc
+				                        ) bb
+				        )cc
+				)dd
+<!-- 		INSERT INTO m_nfc_record_t(nfc_record_idx -->
+<!-- 												, tag, status -->
+<!-- 												, reg_date) -->
+<!--          SELECT seq_nfc_record.nextval -->
+<!--          			, tower.fnct_lc_no || '_' || tower.eqp_no || '_' || #fnct_lc_no_count# ||'_' || #all_no# as tag -->
+<!--          			, 'U' -->
+<!--          			, sysdate  -->
+<!--          FROM op_eqp_header_t tower INNER JOIN op_function_header_t track ON tower.fnct_lc_no = track.fnct_lc_no  -->
+<!--          WHERE tower.eqp_ty_cd = 'T001' -->
+	</insert>
+	
+<!-- 선로코드 리스트 -->
+	<select id="nfcDAO.getTracksList" parameterClass="box" resultClass="box">
+		SELECT DISTINCT fnct_lc_no 
+		FROM op_eqp_header_t 
+		WHERE eqp_ty_cd = 'T001'
+	</select>
+
+	<select id="nfcDAO.getBatchNfcList" parameterClass="box" resultClass="box">
+<!-- 		SELECT track.fnct_lc_no -->
+<!--                 , tower.eqp_no -->
+<!--                 , track.fnct_lc_dtls -->
+<!--                 , tower.eqp_nm -->
+<!--         FROM op_eqp_header_t tower  -->
+<!--         INNER JOIN op_function_header_t track ON track.fnct_lc_no = tower.fnct_lc_no  -->
+<!--         WHERE tower.eqp_ty_cd = 'T001' -->
+<!--         AND tower.eqp_no NOT IN (SELECT nfc.eqp_no -->
+<!--                                 FROM m_nfc_t nfc -->
+<!--                                 WHERE tower.eqp_no = nfc.eqp_no) -->
+<!--         ORDER BY track.fnct_lc_no, tower.eqp_no     -->
+		
+INSERT INTO m_nfc_t(nfc_idx, tag, fnct_lc_no, fnct_lc_dtls, eqp_no, eqp_nm, reg_date)
+SELECT  seq_m_nfc_t.nextval
+            , cc.fnct_lc_no || '_' || cc.eqp_no || '_' || cc.newnum || '_' || #total_cnt# as tag
+            , cc.fnct_lc_no
+            , cc.fnct_lc_dtls
+            , cc.eqp_no
+            , cc.eqp_nm
+            , sysdate
+FROM (
+        SELECT  bb.*
+                    , LPAD(linenum,3,'0') newnum 
+                FROM (SELECT aa.fnct_lc_no
+                                    , aa.fnct_lc_dtls
+                                    , aa.eqp_no
+                                    , aa.eqp_nm
+                                    , tower_idx
+                                    , ROW_NUMBER() OVER(ORDER BY fnct_lc_no) linenum 
+                        FROM ( SELECT tower.fnct_lc_no
+                                            , tracks.fnct_lc_dtls
+                                            , tower.eqp_no
+                                            , tower.eqp_nm
+                                            , (SELECT oei.chartr_value FROM op_eqp_item_t oei WHERE oei.eqp_no = tower.eqp_no AND oei.chartr_cd = 'PM-A-0002') AS tower_idx
+                                    FROM op_eqp_header_t tower INNER JOIN op_function_header_t tracks ON tracks.fnct_lc_no = tower.fnct_lc_no
+                                    WHERE tower.eqp_ty_cd = 'T001' 
+                                    AND tower.fnct_lc_no = '1317-06-101-001-003'
+                                  ) aa 
+                          ORDER BY aa.fnct_lc_no, TO_NUMBER(aa.tower_idx)
+                        ) bb
+        )cc
+	</select>
+		
+<!-- 선로코드 카운터 -->
+	<select id="nfcDAO.getTrackCnt" parameterClass="box" resultClass="int">
+		<!-- SELECT count(*) + 1 as cnt
+        FROM m_nfc_t 
+        where fnct_lc_no = #FNCT_LC_NO# -->
+        
+        SELECT MAX(TO_NUMBER(SUBSTR(tag, INSTR(tag, '_', -1)-4, 4))) +1 as cnt 
+        FROM m_nfc_t 
+        WHERE fnct_lc_no = #FNCT_LC_NO#
+	</select>
+	
+<!-- NFC 테이블의 등록이 안된 지지물 리스트 -->
+	<select id="nfcDAO.getSubBatch" parameterClass="box" resultClass="box">
+	    <!--  SELECT *
+	     FROM( SELECT rownum rn
+            		, tb.*                 
+        			FROM( SELECT *                
+            				FROM( SELECT tower.eqp_no
+                    				, tower.eqp_nm
+                    				, tower.fnct_lc_no
+                   					, tracks.fnct_lc_dtls
+                    				, REPLACE(REPLACE(REPLACE(tower.eqp_nm,
+																			tracks.fnct_lc_dtls,
+														                    ''),
+														        '호 철탑',
+													           ''),
+												   '호 철',
+													'') as tower_idx                    
+			                FROM
+			                    op_eqp_header_t tower 
+			                INNER JOIN
+			                    op_function_header_t tracks                
+			                        ON tower.fnct_lc_no = tracks.fnct_lc_no                      
+			                WHERE
+			                    tower.eqp_ty_cd='T001'                                
+			                    AND NOT EXISTS (SELECT *                         
+								                        FROM m_nfc_t nfc                         
+                        								WHERE tower.eqp_no = nfc.eqp_no
+                   										 )                   
+               							 )                
+           						 ORDER BY TO_NUMBER(tower_idx)                 
+           						 ) tb
+						)   -->
+		
+	   SELECT *
+	         FROM( SELECT rownum rn
+	                    , tb.*                 
+	                    FROM( SELECT *                
+	                            FROM( SELECT tower.eqp_no
+	                                    , tower.eqp_nm
+	                                    , tower.fnct_lc_no
+	                                       , tracks.fnct_lc_dtls
+	                                    , (SELECT oei.chartr_value FROM op_eqp_item_t oei WHERE oei.eqp_no = tower.eqp_no AND oei.chartr_cd = 'PM-A-0002') AS tower_idx                
+	                            FROM
+	                                op_eqp_header_t tower 
+	                            INNER JOIN
+	                                op_function_header_t tracks                
+	                                    ON tower.fnct_lc_no = tracks.fnct_lc_no                      
+	                            WHERE
+	                                tower.eqp_ty_cd='T001'                                
+	                                AND NOT EXISTS (SELECT *                         
+	                                                        FROM m_nfc_t nfc                         
+	                                                        WHERE tower.eqp_no = nfc.eqp_no
+	                                                            )                   
+	                                            )                
+	                                                    
+	                                    ) tb
+	                                    
+	                        ) where fnct_lc_no not in ('2776-01-033','5999-02-012','S904-01-034','SA07-02-012')
+	                          ORDER BY fnct_lc_no asc, TO_NUMBER(tower_idx) asc					
+	</select>
+	
+<!-- nfc 총개수 -->
+	<select id="nfcDAO.getMaxTag" parameterClass="box" resultClass="int">
+		   SELECT MAX(SUBSTR(tag, LENGTH(tag) - 4, LENGTH(tag))) + 1 as tag 
+		   FROM m_nfc_t
+	</select>
+</sqlMap>

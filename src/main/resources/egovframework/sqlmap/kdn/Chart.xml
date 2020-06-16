@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Chart">
+	
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	
+	<select id="Chart.getLogData" parameterClass="box" resultClass="box">
+		SELECT
+		    TB.REG_DATE, TB.USER_NAME, TB.FST_BIZPLC_CD_NM, TB.SCD_BIZPLC_CD_NM, COUNT(TB.LOG_IDX) AS LOG_CONN_CNT
+		FROM(
+		    SELECT
+		        TB1.LOG_IDX
+		        ,TO_CHAR(TB1.REG_DATE , 'YYYY-MM') AS REG_DATE
+		        ,TB2.USER_NAME
+		        ,(SELECT DISTINCT BIZ.FST_BIZPLC_CD_NM BIZ FROM m_bizplc_t BIZ WHERE BIZ.FST_BIZPLC_CD = TB2.FST_BIZPLC_CD AND BIZ.SCD_BIZPLC_CD = TB2.SCD_BIZPLC_CD) AS FST_BIZPLC_CD_NM
+		        ,(SELECT DISTINCT BIZ.SCD_BIZPLC_CD_NM BIZ FROM m_bizplc_t BIZ WHERE BIZ.FST_BIZPLC_CD = TB2.FST_BIZPLC_CD AND BIZ.SCD_BIZPLC_CD = TB2.SCD_BIZPLC_CD) AS SCD_BIZPLC_CD_NM
+		    FROM M_USER_T TB2
+		    LEFT JOIN  m_log_t TB1
+		        ON TB1.REG_ID =  TB2.USER_ID AND TB1.LOG_TYPE = 1 
+		        AND TB1.REG_DATE &gt;= to_date(trim(#startDate#) , 'YYYYMMDD') 
+		        AND TB1.REG_DATE &lt;= to_date(trim(#endDate#) , 'YYYYMMDD') 
+		        <!-- AND TB1.REG_DATE BETWEEN TO_DATE(#startDate#,'YYYYMMDD')  AND TO_DATE(#endDate#,'YYYYMMDD') -->
+		    WHERE 1=1
+		    AND TB2.USER_AUTH = 'KPS'
+		    <isNotEmpty property="fst_bizplc_cd">
+		    AND TB2.FST_BIZPLC_CD = trim(#fst_bizplc_cd#) 
+		    </isNotEmpty>
+		    <isNotEmpty property="scd_bizplc_cd">
+		    AND TB2.SCD_BIZPLC_CD = trim(#scd_bizplc_cd#)
+		    </isNotEmpty>
+		) TB 
+		GROUP BY  
+		    TB.REG_DATE, 
+		    TB.USER_NAME,
+		    TB.FST_BIZPLC_CD_NM,
+		    TB.SCD_BIZPLC_CD_NM
+	</select>
+	
+	
+</sqlMap>

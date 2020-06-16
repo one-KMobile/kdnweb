@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<!-- 
+	수정일                 수정자                          수정내용
+  =========     =======    =================================================
+  2011.8.26   		 서준식     	 	SSO 로그인을 위한 쿼리 추가
+  2011.09.27   		 서준식              컬럼 변경 SUB_DN 을  CRTFC_DN_VALUE 로 변경
+  2011.09.28   		 서준식              컬럼 변경 entrprsmber_id 을  ENTRPRS_MBER_ID 로 변경
+-->
+<sqlMap namespace="trakingDAO">
+
+<!-- 	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/> -->
+<!-- 	<typeAlias  alias="loginVO" type="egovframework.com.cmm.LoginVO"/> -->
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+
+<!-- 로그인 처리를 위한 resultMap --> 
+<!-- 	<resultMap id="login" class="egovframework.com.cmm.LoginVO"> -->
+<!-- 		<result property="id" column="id" columnIndex="1"/> -->
+<!-- 		<result property="name" column="name" columnIndex="2"/> -->
+<!-- 		<result property="ihidNum" column="ihidNum" columnIndex="3"/> -->
+<!-- 		<result property="email" column="email" columnIndex="4"/> -->
+<!-- 		<result property="password" column="password" columnIndex="5"/> -->
+<!-- 		<result property="userSe" column="userSe" columnIndex="6"/> -->
+<!-- 		<result property="orgnztId" column="orgnztId" columnIndex="7"/> -->
+<!-- 		<result property="uniqId" column="uniqId" columnIndex="8"/>		 -->
+<!-- 	</resultMap> -->
+	
+<!-- TRAKING_USER 목록 resultMap -->
+	<resultMap id="trakingInfo" class="box">
+		<result property="user_id" column="user_id" nullValue=""/>
+		<result property="user_name" column="user_name" nullValue=""/>
+		<result property="latitude" column="latitude" nullValue=""/>
+		<result property="longitude" column="longitude" nullValue=""/>
+		<result property="reg_date" column="reg_date" nullValue=""/>
+		<result property="rn" column="rn" nullValue=""/>
+	</resultMap>
+
+	<resultMap id="trakingInfoNothingRn" class="box">
+		<result property="user_id" column="user_id" nullValue=""/>
+		<result property="user_name" column="user_name" nullValue=""/>
+		<result property="latitude" column="latitude" nullValue=""/>
+		<result property="longitude" column="longitude" nullValue=""/>
+		<result property="reg_date" column="reg_date" nullValue=""/>
+	</resultMap>
+<!-- 최근날짜로 순시한 순시자 -->
+	<select id="trakingDAO.getRecentTrakingList" parameterClass="box" resultMap="trakingInfoNothingRn">
+		
+		SELECT DISTINCT aa.user_id
+								, aa.latitude
+								, aa.longitude
+								, to_char(aa.reg_date, 'yyyy-mm-dd hh24:mi') as reg_date
+								, cc.user_name
+		FROM m_traking_user_t aa INNER JOIN (SELECT MAX(traking_user_idx) traking_user_idx
+																			, user_id 
+																FROM m_traking_user_t
+                        										GROUP BY user_id
+                    											) bb ON aa.traking_user_idx = bb.traking_user_idx 
+                    											INNER JOIN m_user_t cc on aa.user_id = cc.user_id
+                    											INNER JOIN m_bizplc_t dd on cc.fst_bizplc_cd = dd.fst_bizplc_cd
+											                    AND cc.scd_bizplc_cd = dd.scd_bizplc_cd
+											                    AND cc.fst_bizplc_cd = #fst_bizplc_cd#
+											                    AND cc.scd_bizplc_cd = #scd_bizplc_cd#
+											                    <isNotEmpty property="user_id">
+											                    	WHERE aa.user_id = #user_id#
+											                    </isNotEmpty>
+	</select>
+	
+<!-- TRAKING_USER 목록 -->
+	<select id="trakingDAO.getTrakingInfo" parameterClass="box" resultMap="trakingInfo">
+		SELECT * 
+        FROM ( SELECT ROWNUM rn, tb.*
+					FROM (SELECT * 
+								FROM( SELECT traking.user_id
+	                                        , traking.latitude
+	                                        , traking.longitude
+	                                        , TO_CHAR(traking.reg_date, 'YYYY-MM-DD HH24:MI') AS reg_date
+	                                        , man.user_name
+	                                        FROM m_traking_user_t traking INNER JOIN m_user_t man ON traking.user_id = man.user_id 
+								        	INNER JOIN m_bizplc_t bizplc ON man.fst_bizplc_cd = bizplc.fst_bizplc_cd
+								        	AND man.scd_bizplc_cd = bizplc.scd_bizplc_cd
+                                            AND man.fst_bizplc_cd = #fst_bizplc_cd#
+                                            AND man.scd_bizplc_cd = #scd_bizplc_cd#
+	                                        <isNotEmpty property="user_id"> 
+	                                        	WHERE traking.user_id = #user_id#
+	                                        </isNotEmpty>
+	                                        )ORDER BY reg_date DESC
+                                )tb
+                                WHERE ROWNUM &lt; 2
+                    )
+	</select>
+	
+	<select id="trakingDAO.getAdminByBizplcList" parameterClass="box" resultClass="box">
+		SELECT traking.user_id, man.user_name
+		FROM m_bizplc_t bizplc INNER JOIN m_user_t man ON bizplc.bizplc_idx = man.bizplc_idx INNER JOIN m_traking_user_t traking ON man.user_id = traking.user_id
+		WHERE bizplc.fst_bizplc_code='9140'
+		AND bizplc.scd_bizplc_code='020'
+		GROUP BY traking.user_id, man.user_name
+	</select>
+	
+<!-- TRAKING USER 리스트 -->
+	<select id="trakingDAO.getTrakingUserList" parameterClass="box" resultClass="box">
+		SELECT DISTINCT traking.user_id
+				, man.user_name
+		FROM m_traking_user_t traking INNER JOIN m_user_t man ON traking.user_id = man.user_id
+	</select>
+	
+<!-- 최신 날짜로 검색된 TRAKING_USER 정보 -->
+	<select id="trakingDAO.getImmediatelyTraking" parameterClass="box" resultClass="box">
+		SELECT * 
+		FROM ( SELECT ROWNUM rn, tb.*
+               		FROM (SELECT * 
+               					FROM( SELECT traking.user_id
+						                , traking.latitude
+						                , traking.longitude
+						                , traking.remarks
+						                , TO_CHAR(traking.reg_date, 'YYYY-MM-DD HH24:MI') AS reg_date
+								        FROM m_traking_user_t traking INNER JOIN m_user_t man ON traking.user_id = man.user_id 
+								        INNER JOIN m_bizplc_t bizplc ON man.bizplc_idx = bizplc.bizplc_idx
+								        WHERE traking.user_id = #user_id#
+								        AND bizplc.fst_bizplc_code = #fst_bizplc_cd#
+								        AND bizplc.scd_bizplc_code = #scd_bizplc_cd#
+        								)ORDER BY reg_date DESC
+      						  )tb
+        						WHERE ROWNUM &lt; 2
+       			 )
+        
+	</select>
+	
+<!-- 선택된 날짜로 순시를 한 순시자 트래킹 -->
+	<select id="trakingDAO.getTrakingByUserList" parameterClass="box" resultClass="box">
+<!-- 		SELECT *  -->
+<!-- 		FROM (SELECT TO_CHAR(ROWNUM) || ')' rn, tb.* -->
+<!-- 				FROM(SELECT * -->
+<!-- 						FROM(SELECT traking.user_id -->
+<!-- 										, man.user_name -->
+<!-- 										, traking.latitude -->
+<!-- 										, traking.longitude -->
+<!-- 										, TO_CHAR(traking.reg_date, 'YYYY-MM-DD HH24:MI') AS reg_date -->
+<!-- 								FROM m_traking_user_t traking INNER JOIN m_user_t man ON traking.user_id = man.user_id  -->
+<!-- 								INNER JOIN m_bizplc_t bizplc ON man.bizplc_idx = bizplc.bizplc_idx -->
+<!-- 								WHERE traking.user_id = #user_id# -->
+<!-- 								AND bizplc.fst_bizplc_code = #fst_bizplc_cd# -->
+<!-- 								AND bizplc.scd_bizplc_code = #scd_bizplc_cd# -->
+<!-- 								AND traking.reg_date BETWEEN to_date(#traking_date#) AND to_date(#traking_date#)+1 -->
+<!-- 								) ORDER BY reg_date ASC -->
+<!-- 						) tb -->
+<!-- 				) -->
+
+		SELECT tb.*
+				, rownum rn FROM ( SELECT user_id
+													, latitude
+													, longitude
+													, TO_CHAR(reg_date, 'HH24:MI') AS reg_date 
+											FROM m_traking_user_t 
+											WHERE user_id=#user_id#
+											AND reg_date BETWEEN to_date(#traking_date#) AND to_date(#traking_date#)+1 
+											ORDER BY reg_date ASC
+											) tb
+	</select>
+</sqlMap>

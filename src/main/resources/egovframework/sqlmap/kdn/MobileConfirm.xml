@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap namespace="MobileConfirm">
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	<!-- 모바일 인증 입력	 -->
+	<insert id="MobileConfirm.saveMobile" parameterClass="box" >
+	<![CDATA[
+		INSERT INTO m_mobile_t (
+					M_IDX 
+					,MOBILE_SN 
+					,CHECK_YN 
+					,CHECK_DATE 
+					,REG_DATE 
+					,REG_ID
+					 )VALUES ( 
+					 SEQ_M_MOBILE_T.NEXTVAL
+					,#mobile_sn#	
+					,#check_yn#
+					,#check_date#
+					,SYSDATE
+					,#reg_id#
+					)
+		]]>
+	</insert>
+	
+	<!-- 모바일 인증 리스트	 -->
+	<resultMap id="MobileConfirm.getMobileList" class="box">
+		<result property="m_idx" column="m_idx" />
+		<result property="mobile_sn" column="mobile_sn" />
+		<result property="check_yn" column="check_yn" />
+		<result property="check_date" column="check_date" />
+		<result property="reg_date" column="reg_date" />
+		<result property="reg_id" column="reg_id" />
+		<result property="rn" column="rn" />
+		<result property="user_name" column="user_name" />
+	</resultMap>
+
+	<select id="MobileConfirm.getMobileList" parameterClass="box" resultMap="MobileConfirm.getMobileList">
+		select * from ( 
+			select rownum rn, tb.* from (
+		    select * from (
+				 select mob.m_idx , mob.mobile_sn , mob.check_yn , mob.check_date , 				
+				 mob.reg_date , mob.reg_id , usr.user_name  
+				  	from m_mobile_t mob 
+					inner join m_user_t usr on usr.user_id = mob.reg_id  	
+				  	where 1=1
+				  	<isNotEmpty prepend="AND" property="fst_bizplc_cd" >
+				  		usr.fst_bizplc_cd = #fst_bizplc_cd#
+				  	</isNotEmpty>
+				  	<isNotEmpty prepend="AND" property="scd_bizplc_cd" >
+				  		usr.scd_bizplc_cd = #scd_bizplc_cd#
+				  	</isNotEmpty>
+			  		<isNotEmpty prepend="AND" property="searchWrd" >            
+		   			 (	usr.user_id 	like '%' ||#searchWrd#|| '%'
+		    				or usr.user_name 	like '%' ||#searchWrd#|| '%'
+		    		 )	
+		    		</isNotEmpty>
+				  	<isNotEmpty prepend="AND" property="check_yn" >            
+		    				check_yn = #check_yn#
+		    		</isNotEmpty>
+		    		<isNotEmpty prepend="AND" property="reg_date_start" > 
+		            	<![CDATA[
+		            		mob.reg_date > to_date(#reg_date_start# ,'yyyymmddhh24miss')
+							]]>
+		    		</isNotEmpty>
+		    		<isNotEmpty prepend="AND" property="reg_date_end" >
+		            	<![CDATA[
+		            		mob.reg_date < to_date(#reg_date_end#, 'yyyymmddhh24miss')
+		             	]]>
+		    		</isNotEmpty>
+		    		) order by reg_date desc
+			) tb 
+		) where rn between #firstIndex# + 1 and #firstIndex# + #recordCountPerPage#
+	</select>
+	
+	<!-- 모바일 인증 토탈 카운트	 -->
+	<select id="MobileConfirm.getMobileListTotCnt" parameterClass="box" resultClass="int">
+		select count(*)
+		  	from m_mobile_t mob 
+				inner join m_user_t usr on usr.user_id = mob.reg_id  	
+				  	where 1=1
+				  	<isNotEmpty prepend="AND" property="fst_bizplc_cd" >
+				  		usr.fst_bizplc_cd = #fst_bizplc_cd#
+				  	</isNotEmpty>
+				  	<isNotEmpty prepend="AND" property="scd_bizplc_cd" >
+				  		usr.scd_bizplc_cd = #scd_bizplc_cd#
+				  	</isNotEmpty>
+			  		<isNotEmpty prepend="AND" property="searchWrd" >            
+		   			 (	usr.user_id 	like '%' ||#searchWrd#|| '%'
+		    				or usr.user_name 	like '%' ||#searchWrd#|| '%'
+		    		 )	
+		    		</isNotEmpty>
+				  	<isNotEmpty prepend="AND" property="check_yn" >            
+		    				check_yn = #check_yn#
+		    		</isNotEmpty>
+		    		<isNotEmpty prepend="AND" property="reg_date_start" > 
+		            	<![CDATA[
+		            		mob.reg_date > to_date(#reg_date_start# ,'yyyymmddhh24miss')
+							]]>
+		    		</isNotEmpty>
+		    		<isNotEmpty prepend="AND" property="reg_date_end" >
+		            	<![CDATA[
+		            		mob.reg_date < to_date(#reg_date_end#, 'yyyymmddhh24miss')
+		             	]]>
+		    		</isNotEmpty>
+	</select>
+	
+	<!-- 모바일 인증 유무 조회	 -->
+	<resultMap id="MobileConfirm.getMobileExist" class="box">
+		<result property="m_idx" column="m_idx"/>
+		<result property="check_yn" column="check_yn"/>
+	</resultMap>
+	<select id="MobileConfirm.getMobileExist" resultClass="box">
+		select check_yn , m_idx
+		  from m_mobile_t 
+		  where reg_id = #reg_id#
+	</select>
+	
+	<!-- 모바일 인증 업데이트	 -->
+	<update id="MobileConfirm.setMobileCheckYN" parameterClass="box">
+	update m_mobile_t set check_yn =  #check_yn#
+		<isEqual property="check_yn" compareValue="Y">
+      	 , check_date = sysdate
+   		</isEqual>
+   		<isEqual property="check_yn" compareValue="N">
+      	 , check_date = null
+   		</isEqual>
+		where m_idx = #m_idx#
+	</update>
+	
+	<!-- 모바일 인증 선택 번호 업데이트	 -->
+	<update id="MobileConfirm.setAllConfirm" parameterClass="box">
+		update m_mobile_t
+			set check_yn = 'Y'
+		where m_idx in (<iterate property="chk" 	conjunction=",">#chk[]#</iterate>)
+	</update>
+</sqlMap>
+

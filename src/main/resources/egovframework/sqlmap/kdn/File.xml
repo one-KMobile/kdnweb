@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<!-- 
+	수정일                 수정자                          수정내용
+  =========     =======    =================================================
+  2011.8.26   		 서준식     	 	SSO 로그인을 위한 쿼리 추가
+  2011.09.27   		 서준식              컬럼 변경 SUB_DN 을  CRTFC_DN_VALUE 로 변경
+  2011.09.28   		 서준식              컬럼 변경 entrprsmber_id 을  ENTRPRS_MBER_ID 로 변경
+-->
+<sqlMap namespace="kdnFile">
+
+<!-- 	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/> -->
+<!-- 	<typeAlias  alias="loginVO" type="egovframework.com.cmm.LoginVO"/> -->
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+
+<!-- 로그인 처리를 위한 resultMap --> 
+<!-- 	<resultMap id="login" class="egovframework.com.cmm.LoginVO"> -->
+<!-- 		<result property="id" column="id" columnIndex="1"/> -->
+<!-- 		<result property="name" column="name" columnIndex="2"/> -->
+<!-- 		<result property="ihidNum" column="ihidNum" columnIndex="3"/> -->
+<!-- 		<result property="email" column="email" columnIndex="4"/> -->
+<!-- 		<result property="password" column="password" columnIndex="5"/> -->
+<!-- 		<result property="userSe" column="userSe" columnIndex="6"/> -->
+<!-- 		<result property="orgnztId" column="orgnztId" columnIndex="7"/> -->
+<!-- 		<result property="uniqId" column="uniqId" columnIndex="8"/>		 -->
+<!-- 	</resultMap> -->
+
+<!-- 그룹파일 생성 -->
+	<insert id="fileDAO.setGroupFileInsert" parameterClass="box">
+		INSERT INTO m_group_file_t (group_file_seq
+											, group_file_id
+											, group_file_name
+											, group_file_realpath
+											, reg_id
+											, reg_date) VALUES (seq_m_group_file_t.nextval
+																		, #group_file_id#
+																		, #group_file_name#
+																		, #group_file_realpath#
+																		, #reg_id#
+																		, sysdate)
+	</insert>
+	
+<!-- 파일 생성	 -->
+	<insert id="fileDAO.setFileInsert" parameterClass="box">
+		INSERT INTO m_file_t (file_seq
+									, group_file_id
+									, file_id
+									, file_name
+									, file_realpath
+									, file_subject
+									<isNotEmpty property="file_contents">
+										, file_contents
+									</isNotEmpty>
+									, reg_id
+									, reg_date) VALUES( seq_m_file_t.nextval
+																, #group_file_id#
+																, $file_id$
+																, #file_name#
+																, #file_realpath#
+																, #file_subject#
+																<isNotEmpty property="file_contents">
+																	, #file_contents#
+																</isNotEmpty>
+																, #reg_id#
+																, sysdate)
+	</insert>
+	
+<!-- 파일아이디 MAX 값 검색	 -->
+	<select id="fileDAO.getMaxFileId" parameterClass="box" resultClass="box">
+		SELECT MAX(file_id) as file_id
+		FROM m_file_t
+		WHERE group_file_id = #group_file_id#
+	</select>
+	
+<!-- 그룹파일정보 -->	
+	<select id="fileDAO.getGroupFileInfo" parameterClass="box" resultClass="box">
+		SELECT * 
+		FROM m_group_file_t
+		WHERE group_file_id = #group_file_id#
+	</select> 
+	
+<!-- 그룹파일 삭제 -->		
+	<delete id="fileDAO.setGroupFileDelete" parameterClass="box">
+		DELETE FROM m_group_file_t
+		WHERE group_file_id = #group_file_id#
+	</delete>
+	
+<!-- 파일삭제 -->	
+	<delete id="fileDAO.setFileDelete" parameterClass="box">
+		DELETE FROM m_file_t
+		WHERE group_file_id = #group_file_id#
+	</delete>
+	
+<!-- 파일이름 중복체크 -->	
+	<select id="fileDAO.isExistFileName" parameterClass="box" resultClass="int">
+		SELECT COUNT(*)
+		FROM m_file_t
+		WHERE file_name = #file_name#
+	</select>
+
+
+<!-- 로그인 처리를 위한 resultMap --> 
+	<resultMap id="fileResult.fileInfo" class="box">
+		<result property="file_name" column="file_name"  nullValue=""/>
+		<result property="file_realpath" column="file_realpath"  nullValue=""/>
+		<result property="eqp_no" column="eqp_no"  nullValue=""/>
+		<result property="file_subject" column="file_subject" nullValue=""/>
+		<result property="file_contents" column="file_contents" nullValue=""/>
+	</resultMap> 
+<!-- 파일정보 -->
+	<select id="fileDAO.getFileInfo" parameterClass="box" resultMap="fileResult.fileInfo">
+		SELECT file_name
+				, file_realpath
+				, substr(group_file_id, instr(group_file_id, '_') +1, length(group_file_id)) AS eqp_no
+				, file_subject
+				, file_contents
+		FROM m_file_t
+		WHERE group_file_id = #group_file_id#		
+	</select>				
+</sqlMap>

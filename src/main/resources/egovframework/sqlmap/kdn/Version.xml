@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap namespace="Version">
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	<!-- [모바일 버전] 목록 조회 -->
+	<resultMap id="Version.getVersionList" class="box">
+		<result property="version_idx" column="VERSION_IDX"/>
+		<result property="version" column="VERSION"/>
+		<result property="url" column="URL"/>
+		<result property="reg_id" column="REG_ID"/>
+		<result property="reg_date" column="REG_DATE"/>
+		<result property="remarks" column="REMARKS"/>
+		<result property="use_yn" column="USE_YN"/>
+		<result property="upd_date" column="UPD_DATE"/>
+	</resultMap>
+
+	<select id="Version.getVersionList" parameterClass="box" resultMap="Version.getVersionList" >
+		SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+			SELECT
+			  	VERSION_IDX,
+	  			VERSION,
+	  			URL,
+	  			REG_ID,
+	  			REG_DATE,
+	  			UPD_DATE,
+	  			REMARKS,
+	  			USE_YN
+			FROM
+	  			M_VERSION_T 
+	 	 	WHERE 1=1
+			  	<isNotEmpty prepend="AND" property="use_yn" >	
+		  			USE_YN = #use_yn#
+		  		</isNotEmpty>
+		        ORDER BY VERSION_IDX DESC
+	       ) TB ) WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+	</select>	
+	
+	<!-- [모바일 버전]  카운트 조회 -->
+	<select id="Version.getVersionListTotCnt" parameterClass="box" resultClass="int">
+		SELECT 
+			COUNT(*) totCnt
+				FROM M_VERSION_T
+	  			M_VERSION_T 
+	  	WHERE 1=1
+	  		<isNotEmpty prepend="AND" property="use_yn" >	
+		  		USE_YN = #use_yn#
+		  	</isNotEmpty>
+	</select>
+	
+	<!-- [모바일 버전] 등록 저장  -->
+
+	<insert id="Verstion.versionInsert" parameterClass="box">
+	<![CDATA[
+		INSERT INTO M_VERSION_T ( 
+						VERSION_IDX       
+						,VERSION 
+						,URL    
+						,REG_ID           
+						,REG_DATE    
+						,REMARKS
+						,USE_YN
+				 )VALUES ( 
+						SEQ_M_VERSION_T.NEXTVAL
+						,#version#
+						,#url#
+						,#reg_id#
+						,SYSDATE
+						,#remarks#
+						,#use_yn#
+				  )
+			]]>
+	</insert>
+	
+	<!-- [모바일 버전] 수정  -->
+	<update id="Version.versionUpdate" parameterClass="box">
+	<![CDATA[
+		UPDATE M_VERSION_T SET
+			VERSION =  #version#
+			,URL = #url#
+			,REG_ID = #reg_id#
+			,UPD_DATE = SYSDATE
+			,REMARKS =#remarks#
+			,USE_YN =#use_yn#
+		WHERE VERSION_IDX = #version_idx#
+	]]>
+	</update>
+	
+	<!-- [모바일 버전] 삭제  -->
+	<delete id="Version.versionDelete" parameterClass="box">
+		DELETE FROM M_VERSION_T
+				WHERE VERSION_IDX IN (<iterate property="chk" conjunction=",">#chk[]#</iterate>)
+	</delete>
+ 	
+ 	<!-- [모바일 버전] 상세 가져오기-->
+	<select id="Version.getVersionView" parameterClass="box" resultClass="int" resultMap="Version.getVersionList">
+		SELECT
+		  	VERSION_IDX,
+  			VERSION,
+  			URL,
+  			REG_ID,
+  			REG_DATE,
+  			UPD_DATE,
+  			REMARKS,
+  			USE_YN
+		FROM
+	  			M_VERSION_T 
+	  	WHERE 1=1
+		AND VERSION_IDX = #version_idx#
+	</select>
+	<select id="Version.getVersionLastVersion" resultMap="Version.getVersionList" parameterClass="box">
+	SELECT * FROM (
+	SELECT
+		VERSION_IDX,
+  			VERSION,
+  			URL,
+  			REG_ID,
+  			REG_DATE,
+  			UPD_DATE,
+  			REMARKS,
+  			USE_YN
+		FROM
+	  			M_VERSION_T 
+	  	WHERE 1=1
+		AND USE_YN = '1'
+		ORDER BY VERSION DESC
+	)	
+	WHERE  ROWNUM = 1 
+	</select>
+</sqlMap>

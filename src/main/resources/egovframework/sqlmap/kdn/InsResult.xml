@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="InsResult">
+	
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	
+	<resultMap id="Result.getInsResultList"  class="box">
+		<result property="schedule_id" column="SCHEDULE_ID" nullValue=""/>
+		<result property="fst_bizplc_cd_nm" column="FST_BIZPLC_CD_NM" nullValue=""/>
+		<result property="scd_bizplc_cd_nm" column="SCD_BIZPLC_CD_NM" nullValue=""/>
+		<result property="fnct_lc_dtls" column="FNCT_LC_DTLS" nullValue=""/>
+		<result property="cycle_ym" column="CYCLE_YM" nullValue=""/>
+		<result property="ins_name" column="INS_NAME" nullValue=""/>
+		<result property="code_id" column="CODE_ID" nullValue=""/>
+		<result property="ins_count" column="INS_COUNT" nullValue=""/>
+		<result property="tower_count" column="TOWER_COUNT" nullValue=""/>
+	</resultMap>
+	
+	<!-- [순시결과] 목록 조회 -->
+	<select id="InsResult.getInsResultList" parameterClass="box" resultMap="Result.getInsResultList" >
+		SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+			SELECT 
+				*
+			FROM (	
+				SELECT DISTINCT SCHEDULE_ID, FST_BIZPLC_CD_NM, SCD_BIZPLC_CD_NM, FNCT_LC_DTLS, CYCLE_YM, INS_NAME, CODE_ID, COUNT(MASTER_IDX) INS_COUNT, TOWER_COUNT 
+				FROM (
+					SELECT AA.SCHEDULE_ID, AA.MASTER_IDX, AA.CYCLE_YM
+					, (SELECT DISTINCT EE.FST_BIZPLC_CD_NM FROM M_BIZPLC_T EE WHERE EE.FST_BIZPLC_CD = DD.FST_BIZPLC_CD AND EE.SCD_BIZPLC_CD = DD.SCD_BIZPLC_CD) FST_BIZPLC_CD_NM
+					, (SELECT DISTINCT EE.SCD_BIZPLC_CD_NM FROM M_BIZPLC_T EE WHERE EE.FST_BIZPLC_CD = DD.FST_BIZPLC_CD AND EE.SCD_BIZPLC_CD = DD.SCD_BIZPLC_CD) SCD_BIZPLC_CD_NM
+					, DD.FNCT_LC_DTLS
+					, FF.CODE_NAME INS_NAME
+					, FF.CODE_ID
+					, (SELECT COUNT(EQP_NO) FROM OP_EQP_HEADER_T EE WHERE EE.FNCT_LC_NO = AA.FNCT_LC_NO AND EE.EQP_TY_CD = 'T001') TOWER_COUNT
+					FROM M_RESULT_MASTER_T AA 
+					INNER JOIN OP_FUNCTION_HEADER_T DD ON AA.FNCT_LC_NO = DD.FNCT_LC_NO 
+					INNER JOIN M_CODE_T FF ON AA.INS_TYPE_CODE = FF.CODE_ID AND FF.GROUP_CODE_ID = 'INS_TYPE' 
+					WHERE 1=1
+					<isNotEmpty property="fst_bizplc_cd" prepend="AND"> 
+						DD.FST_BIZPLC_CD = trim(#fst_bizplc_cd#) 
+					</isNotEmpty>
+					<isNotEmpty property="scd_bizplc_cd" prepend="AND">
+						DD.SCD_BIZPLC_CD = trim(#scd_bizplc_cd#) 
+					</isNotEmpty>
+					<isNotEmpty property="cycle_ym" prepend="AND">
+						AA.CYCLE_YM = trim(#cycle_ym#)
+					</isNotEmpty>
+				) TOTAL 
+				GROUP BY SCHEDULE_ID, FST_BIZPLC_CD_NM, SCD_BIZPLC_CD_NM, FNCT_LC_DTLS, CYCLE_YM, INS_NAME, CODE_ID, TOWER_COUNT
+				ORDER BY FST_BIZPLC_CD_NM, SCD_BIZPLC_CD_NM, FNCT_LC_DTLS, CODE_ID DESC
+			)	
+        ) TB ) WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+						
+	</select>
+	
+	<!-- [순시결과] 목록 카운트 조회 -->
+	<select id="InsResult.getInsResultListTotCnt" parameterClass="box" resultClass="int">
+			SELECT 
+				COUNT(*) totcnt
+			FROM(
+				SELECT * 	
+				FROM (
+					SELECT AA.SCHEDULE_ID, AA.MASTER_IDX, AA.CYCLE_YM
+					, (SELECT DISTINCT EE.FST_BIZPLC_CD_NM FROM M_BIZPLC_T EE WHERE EE.FST_BIZPLC_CD = DD.FST_BIZPLC_CD AND EE.SCD_BIZPLC_CD = DD.SCD_BIZPLC_CD) FST_BIZPLC_CD_NM
+					, (SELECT DISTINCT EE.SCD_BIZPLC_CD_NM FROM M_BIZPLC_T EE WHERE EE.FST_BIZPLC_CD = DD.FST_BIZPLC_CD AND EE.SCD_BIZPLC_CD = DD.SCD_BIZPLC_CD) SCD_BIZPLC_CD_NM
+					, DD.FNCT_LC_DTLS
+					, FF.CODE_NAME INS_NAME
+					, FF.CODE_ID
+					, (SELECT COUNT(EQP_NO) FROM OP_EQP_HEADER_T EE WHERE EE.FNCT_LC_NO = AA.FNCT_LC_NO AND EE.EQP_TY_CD = 'T001') TOWER_COUNT
+					FROM M_RESULT_MASTER_T AA 
+					INNER JOIN OP_FUNCTION_HEADER_T DD ON AA.FNCT_LC_NO = DD.FNCT_LC_NO 
+					INNER JOIN M_CODE_T FF ON AA.INS_TYPE_CODE = FF.CODE_ID AND FF.GROUP_CODE_ID = 'INS_TYPE' 
+					WHERE 1=1
+					<isNotEmpty property="fst_bizplc_cd" prepend="AND"> 
+						DD.FST_BIZPLC_CD = trim(#fst_bizplc_cd#) 
+					</isNotEmpty>
+					<isNotEmpty property="scd_bizplc_cd" prepend="AND">
+						DD.SCD_BIZPLC_CD = trim(#scd_bizplc_cd#) 
+					</isNotEmpty>
+					<isNotEmpty property="cycle_ym" prepend="AND">
+						AA.CYCLE_YM = trim(#cycle_ym#)
+					</isNotEmpty>
+				) TOTAL 
+				GROUP BY SCHEDULE_ID, FST_BIZPLC_CD_NM, SCD_BIZPLC_CD_NM, FNCT_LC_DTLS, CYCLE_YM, INS_NAME, CODE_ID, TOWER_COUNT
+			)	
+	</select>
+	
+	<resultMap id="Result.getInsResultTopView"  class="box">
+		<result property="schedule_id" column="SCHEDULE_ID" nullValue=""/>
+		<result property="fst_bizplc_cd_nm" column="FST_BIZPLC_CD_NM" nullValue=""/>
+		<result property="scd_bizplc_cd_nm" column="SCD_BIZPLC_CD_NM" nullValue=""/>
+		<result property="fnct_lc_dtls" column="FNCT_LC_DTLS" nullValue=""/>
+		<result property="ins_name" column="INS_NAME" nullValue=""/>
+		<result property="ins_date" column="INS_DATE" nullValue=""/>
+		<result property="start_time" column="START_TIME" nullValue=""/>
+		<result property="end_time" column="END_TIME" nullValue=""/>
+		<result property="check_ins_name_a" column="CHECK_INS_NAME_A" nullValue=""/>
+		<result property="check_ins_name_b" column="CHECK_INS_NAME_B" nullValue=""/>
+		<result property="weather_name" column="WEATHER_NAME" nullValue=""/>
+		<result property="remarks" column="REMARKS" nullValue=""/>
+		<result property="code_id" column="CODE_ID" nullValue=""/>
+	</resultMap>
+	
+	<!-- [순시결과] 상세 정보 조회 (상단부분) -->
+	<select id="InsResult.getInsResultTopView" parameterClass="box" resultMap="Result.getInsResultTopView" >
+		SELECT 
+			DISTINCT AA.CYCLE_YM, AA.SCHEDULE_ID
+			, (SELECT DISTINCT EE.FST_BIZPLC_CD_NM FROM M_BIZPLC_T EE WHERE EE.FST_BIZPLC_CD = DD.FST_BIZPLC_CD AND EE.SCD_BIZPLC_CD = DD.SCD_BIZPLC_CD) FST_BIZPLC_CD_NM
+			, (SELECT DISTINCT EE.SCD_BIZPLC_CD_NM FROM M_BIZPLC_T EE WHERE EE.FST_BIZPLC_CD = DD.FST_BIZPLC_CD AND EE.SCD_BIZPLC_CD = DD.SCD_BIZPLC_CD) SCD_BIZPLC_CD_NM
+			, DD.FNCT_LC_DTLS
+			, FF.CODE_NAME INS_NAME
+			, TO_CHAR(AA.INS_DATE, 'YYYY-MM-DD') INS_DATE
+			, (SELECT TO_CHAR(MIN(MRMT.INS_DATE), 'hh24:mi') FROM M_RESULT_MASTER_T MRMT WHERE MRMT.SCHEDULE_ID = trim(#schedule_id#)) START_TIME
+			, (SELECT TO_CHAR(MAX(MRMT.INS_DATE), 'hh24:mi') FROM M_RESULT_MASTER_T MRMT WHERE MRMT.SCHEDULE_ID = trim(#schedule_id#)) END_TIME
+			, GG.USER_NAME CHECK_INS_NAME_A
+			, HH.USER_NAME CHECK_INS_NAME_B
+			, II.CODE_NAME WEATHER_NAME
+			, AA.REMARKS 
+			, FF.CODE_ID 
+		FROM M_RESULT_MASTER_T AA 
+		INNER JOIN OP_FUNCTION_HEADER_T DD ON AA.FNCT_LC_NO = DD.FNCT_LC_NO 
+		INNER JOIN M_CODE_T FF ON AA.INS_TYPE_CODE = FF.CODE_ID AND FF.GROUP_CODE_ID = 'INS_TYPE' 
+		INNER JOIN M_USER_T GG ON AA.CHECK_INS_NAME_A = GG.USER_ID 
+		LEFT JOIN M_USER_T HH ON AA.CHECK_INS_NAME_B = HH.USER_ID 
+		INNER JOIN M_CODE_T II ON AA.WEATHER_CODE = II.CODE_ID AND II.GROUP_CODE_ID = 'WETHR_SECD' 
+		WHERE AA.SCHEDULE_ID = trim(#schedule_id#)
+		AND ROWNUM = 1
+	</select>		
+	
+	<resultMap id="Result.getInsResult001SubList"  class="box">
+		<result property="eqp_nm" column="EQP_NM" nullValue=""/>
+		<result property="ins_date" column="INS_DATE" nullValue=""/>
+		<result property="code_id" column="CODE_ID" nullValue=""/>
+		<result property="code_name" column="CODE_NAME" nullValue=""/>
+		<result property="examin_cn" column="EXAMIN_CN" nullValue=""/>
+		<result property="remarks" column="REMARKS" nullValue=""/>
+		<result property="group_file_id" column="GROUP_FILE_ID" nullValue=""/>
+		<result property="eqp_no" column="EQP_NO" nullValue=""/>
+		<result property="group_file_id_check" column="GROUP_FILE_ID_CHECK" nullValue=""/>
+	</resultMap>
+	
+	<!-- [순시결과 - 보통순시] 상세 목록 조회 (하단부분) -->
+	<select id="InsResult.getInsResult001SubList" parameterClass="box" resultMap="Result.getInsResult001SubList" >
+		SELECT 
+		    CC.CHARTR_VALUE AS EQP_NM
+		    ,TO_CHAR(AA.INS_DATE, 'YYYY-MM-DD hh24:mi') INS_DATE
+		    ,DD.CODE_ID 
+		    ,DD.CODE_NAME 
+		    ,BB.EXAMIN_CN
+		    ,BB.GROUP_FILE_ID 
+		    ,AA.REMARKS
+		    ,AA.EQP_NO
+		    ,CASE WHEN BB.GROUP_FILE_ID IS NULL THEN '0'
+             ELSE '1'
+             END AS GROUP_FILE_ID_CHECK
+		FROM M_RESULT_MASTER_T AA 
+		INNER JOIN M_RESULT_AA_T BB ON AA.MASTER_IDX = BB.MASTER_IDX 
+		INNER JOIN OP_EQP_ITEM_T CC ON AA.EQP_NO = CC.EQP_NO AND CC.CHARTR_CD = 'PM-A-0002'   
+		INNER JOIN M_CODE_T DD ON BB.TINS_RESULT_SECD = DD.CODE_ID AND DD.GROUP_CODE_ID = 'GOOD_SECD' 
+		WHERE AA.SCHEDULE_ID = trim(#schedule_id#)
+		<!-- AND AA.INS_TYPE_CODE = '001' -->
+		ORDER BY CC.CHARTR_VALUE
+	</select>
+	
+	<resultMap id="Result.getInsResult025SubList"  class="box">
+		<result property="eqp_no" column="EQP_NO" nullValue=""/>
+		<result property="eqp_nm" column="EQP_NM" nullValue=""/>
+		<result property="ins_date" column="INS_DATE" nullValue=""/>
+		<result property="flight_lmp_knd" column="FLIGHT_LMP_KND" nullValue=""/>
+		<result property="flight_lmp_no" column="FLIGHT_LMP_NO" nullValue=""/>
+		<result property="srcelct_knd" column="SRCELCT_KND" nullValue=""/>
+		<result property="flck_co" column="FLCK_CO" nullValue=""/>
+		<result property="lightg_stadiv_cd" column="LIGHTG_STADIV_CD" nullValue=""/>
+		<result property="good_secd" column="GOOD_SECD" nullValue=""/>
+		<result property="group_file_id" column="GROUP_FILE_ID" nullValue=""/>
+		<result property="eqp_no" column="EQP_NO" nullValue=""/>
+		<result property="group_file_id_check" column="GROUP_FILE_ID_CHECK" nullValue=""/>
+	</resultMap>
+	
+	<!-- [순시결과 - 항공장애등등구확인점검] 상세 목록 조회 (하단부분) -->
+	<select id="InsResult.getInsResult025SubList" parameterClass="box" resultMap="Result.getInsResult025SubList" >
+		SELECT 
+			CC.EQP_NO
+		    ,CC.CHARTR_VALUE AS EQP_NM <!-- 지지물명 -->
+		    ,TO_CHAR(AA.INS_DATE, 'YYYY-MM-DD hh24:mi') INS_DATE <!-- 순시시각 -->
+		    ,(SELECT CD.CODE_NAME FROM M_CODE_T CD WHERE CD.GROUP_CODE_ID = 'FLIGHT_LMP_KND' AND CD.CODE_ID = BB.FLIGHT_LMP_KND ) AS FLIGHT_LMP_KND  <!-- 항공등종류 -->
+		    ,BB.FLIGHT_LMP_NO  <!-- 항공등번호 -->
+		    ,(SELECT CD.CODE_NAME FROM M_CODE_T CD WHERE CD.GROUP_CODE_ID = 'SRCELCT_KND' AND CD.CODE_ID = BB.SRCELCT_KND ) AS SRCELCT_KND  <!-- 전원종류 -->
+		    ,BB.FLCK_CO  <!-- 점멸횟수 -->
+		    ,(SELECT CD.CODE_ID FROM M_CODE_T CD WHERE CD.GROUP_CODE_ID = 'GOOD_SECD' AND CD.CODE_ID = BB.LIGHTG_STADIV_CD ) AS LIGHTG_STADIV_CD  <!-- 점등상태 CODE-->
+		    ,(SELECT CD.CODE_ID FROM M_CODE_T CD WHERE CD.GROUP_CODE_ID = 'GOOD_SECD' AND CD.CODE_ID = BB.GOOD_SECD ) AS GOOD_SECD  <!-- 양부판정 CODE -->
+		    ,BB.GROUP_FILE_ID
+		    ,AA.EQP_NO
+		    ,CASE WHEN BB.GROUP_FILE_ID IS NULL THEN '0'
+             ELSE '1'
+             END AS GROUP_FILE_ID_CHECK
+		FROM M_RESULT_MASTER_T AA 
+		INNER JOIN M_RESULT_DD_T BB ON AA.MASTER_IDX = BB.MASTER_IDX 
+		INNER JOIN OP_EQP_ITEM_T CC ON AA.EQP_NO = CC.EQP_NO AND CC.CHARTR_CD = 'PM-A-0002'
+		WHERE AA.SCHEDULE_ID = trim(#schedule_id#)
+		<!-- AND AA.INS_TYPE_CODE = '025' -->
+		ORDER BY CC.CHARTR_VALUE, BB.FLIGHT_LMP_KND, BB.FLIGHT_LMP_NO  
+	</select>
+	
+	<resultMap id="Result.getInsResult024SubList"  class="box">
+		<result property="eqp_no" column="EQP_NO" nullValue=""/>
+		<result property="eqp_nm" column="EQP_NM" nullValue=""/>
+		<result property="ins_date" column="INS_DATE" nullValue=""/>
+		<result property="flight_lmp_knd" column="FLIGHT_LMP_KND" nullValue=""/>
+		<result property="srcelct_knd" column="SRCELCT_KND" nullValue=""/>
+		<result property="flight_lmp_no" column="FLIGHT_LMP_NO" nullValue=""/>
+		<result property="ctrl_ban_gdbd_secd" column="CTRL_BAN_GDBD_SECD" nullValue=""/>
+		<result property="slrcl_gdbd_secd" column="SLRCL_GDBD_SECD" nullValue=""/>
+		<result property="srgbtry_gdbd_secd" column="SRGBTRY_GDBD_SECD" nullValue=""/>
+		<result property="rgist_gu_gdbd_secd" column="RGIST_GU_GDBD_SECD" nullValue=""/>
+		<result property="cabl_gdbd_secd" column="CABL_GDBD_SECD" nullValue=""/>
+		<result property="good_secd" column="GOOD_SECD" nullValue=""/>
+		<result property="group_file_id" column="GROUP_FILE_ID" nullValue=""/>
+		<result property="eqp_no" column="EQP_NO" nullValue=""/>
+		<result property="group_file_id_check" column="GROUP_FILE_ID_CHECK" nullValue=""/>
+	</resultMap>
+	
+	<!-- [순시결과 - 항공장애등점검] 상세 목록 조회 (하단부분) -->
+	<select id="InsResult.getInsResult024SubList" parameterClass="box" resultMap="Result.getInsResult024SubList" >
+		SELECT 
+			CC.EQP_NO
+		    ,CC.CHARTR_VALUE AS EQP_NM <!-- 지지물명 -->
+		    ,TO_CHAR(AA.INS_DATE, 'YYYY-MM-DD hh24:mi') INS_DATE <!-- 순시시각 -->
+		    ,(SELECT CD.CODE_NAME FROM M_CODE_T CD WHERE CD.GROUP_CODE_ID = 'FLIGHT_LMP_KND' AND CD.CODE_ID = BB.FLIGHT_LMP_KND ) AS FLIGHT_LMP_KND  <!-- 항공등종류 -->
+		    ,(SELECT CD.CODE_NAME FROM M_CODE_T CD WHERE CD.GROUP_CODE_ID = 'SRCELCT_KND' AND CD.CODE_ID = BB.SRCELCT_KND ) AS SRCELCT_KND  <!-- 전원종류 -->
+		    ,BB.FLIGHT_LMP_NO  <!-- 항공등번호 -->  
+		    ,BB.CTRL_BAN_GDBD_SECD  <!-- 제어반 -->
+		    ,BB.SLRCL_GDBD_SECD  <!-- 태양전지 -->
+		    ,BB.SRGBTRY_GDBD_SECD  <!-- 축전지 -->
+		    ,BB.RGIST_GU_GDBD_SECD  <!-- 등기구 -->
+		    ,BB.CABL_GDBD_SECD  <!-- 전선 -->
+		    ,(SELECT CD.CODE_ID FROM M_CODE_T CD WHERE CD.GROUP_CODE_ID = 'GOOD_SECD' AND CD.CODE_ID = BB.GOOD_SECD ) AS GOOD_SECD  <!-- 양부판정 -->
+		    ,BB.GROUP_FILE_ID
+		    ,AA.EQP_NO
+		    ,CASE WHEN BB.GROUP_FILE_ID IS NULL THEN '0'
+             ELSE '1'
+             END AS GROUP_FILE_ID_CHECK
+		FROM M_RESULT_MASTER_T AA 
+		INNER JOIN M_RESULT_HH_T BB ON AA.MASTER_IDX = BB.MASTER_IDX 
+		INNER JOIN OP_EQP_ITEM_T CC ON AA.EQP_NO = CC.EQP_NO AND CC.CHARTR_CD = 'PM-A-0002'
+		WHERE AA.SCHEDULE_ID = trim(#schedule_id#)
+		<!-- AND AA.INS_TYPE_CODE = '024' -->
+		ORDER BY CC.CHARTR_VALUE, BB.FLIGHT_LMP_KND, BB.FLIGHT_LMP_NO 
+	</select>
+	
+	<resultMap id="Result.getInsResult029SubList"  class="box">
+		<result property="tower_idx" column="tower_idx" nullValue=""/>
+		<result property="cl_no" column="cl_no" nullValue=""/>
+		<result property="ty_secd" column="ty_secd" nullValue=""/>
+		<result property="phs_secd" column="phs_secd" nullValue=""/>
+		<result property="insbty_lft" column="insbty_lft" nullValue=""/>
+		<result property="insbty_rit" column="insbty_rit" nullValue=""/>
+		<result property="insr_qy" column="insr_qy" nullValue=""/>
+		<result property="bad_insr_qy" column="bad_insr_qy" nullValue=""/>
+		<result property="good_secd" column="good_secd" nullValue=""/>
+		<result property="group_file_id" column="group_file_id" nullValue=""/>
+		<result property="eqp_no" column="eqp_no" nullValue=""/>
+		<result property="group_file_id_check" column="GROUP_FILE_ID_CHECK" nullValue=""/>
+	</resultMap>
+	
+	<!-- [순시결과 - 불량애자검출] 상세 목록 조회 (하단부분) -->
+	<select id="InsResult.getInsResult029SubList" parameterClass="box" resultMap="Result.getInsResult029SubList">
+		    select
+        abc.*,
+        (select
+            intwr_no 
+        from
+            op_eqp_header_t 
+        where
+            eqp_no = abc.eqp_no) tower_idx    
+    from
+        (     SELECT
+            (SELECT
+                aa.eqp_no          
+            FROM
+                m_result_master_t aa          
+            WHERE
+                aa.master_idx = bb.master_idx) AS eqp_no      ,
+            bb.cl_no     ,
+            (SELECT
+                cd.code_name          
+            FROM
+                m_code_t cd          
+            WHERE
+                cd.group_code_id = 'TY_SECD'              
+                AND cd.code_id = bb.ty_secd) AS ty_secd     ,
+            (SELECT
+                cd.code_name          
+            FROM
+                m_code_t cd          
+            WHERE
+                cd.group_code_id = 'PHS_SECD'              
+                AND cd.code_id = bb.phs_secd) AS phs_secd     ,
+            bb.insbty_lft     ,
+            bb.insbty_rit     ,
+            bb.insr_qy     ,
+            bb.bad_insr_qy     ,
+            bb.good_secd      ,
+            bb.group_file_id  ,
+          	CASE WHEN BB.GROUP_FILE_ID IS NULL THEN '0'
+            ELSE '1'
+            END AS GROUP_FILE_ID_CHECK         
+        FROM
+            m_result_ff_t bb        
+        WHERE
+            bb.master_idx IN (
+               $master_idx$   
+            )        
+                  ) abc  
+            ORDER BY
+            tower_idx ,
+            abc.cl_no,
+            abc.ty_secd desc,
+            abc.phs_secd
+	</select>
+	
+	<!-- 지지물번호 호출 -->
+	<select id="InsResult.getTowerIdx" parameterClass="box" resultClass="box">
+		SELECT REPLACE(REPLACE(REPLACE(bb.eqp_nm, aa.fnct_lc_dtls,''), '호 철탑', ''), '호 철','') tower_idx   
+		FROM OP_FUNCTION_HEADER_T aa INNER JOIN OP_EQP_HEADER_T bb ON aa.fnct_lc_no = bb.fnct_lc_no 
+		INNER JOIN m_result_master_t cc ON BB.EQP_NO = cc.eqp_no 
+		AND cc.schedule_id = #schedule_id#
+		and rownum &lt; 2
+	</select>
+	
+	<!-- 마스터 인덱스 호출 -->
+	<select id="InsResult.getMasterIdx" parameterClass="box" resultClass="box">
+		SELECT master_idx 
+		FROM m_result_master_t
+		WHERE schedule_id = #schedule_id#
+	</select>
+	
+	<resultMap id="Result.getInsResult028SubList"  class="box">
+		<result property="result_idx" column="RESULT_IDX" nullValue=""/>
+		<result property="eqp_no" column="EQP_NO" nullValue=""/>
+		<result property="eqp_nm" column="EQP_NM" nullValue=""/>
+		<result property="ins_date" column="INS_DATE" nullValue=""/>
+		<result property="value_1" column="VALUE_1" nullValue=""/>
+		<result property="value_2" column="VALUE_2" nullValue=""/>
+		<result property="value_3" column="VALUE_3" nullValue=""/>
+		<result property="value_5" column="VALUE_5" nullValue=""/>
+		<result property="value_10" column="VALUE_10" nullValue=""/>
+		<result property="msr_co" column="MSR_CO" nullValue=""/>
+		<result property="good_secd" column="GOOD_SECD" nullValue=""/>
+		<result property="pmttr" column="PMTTR" nullValue=""/>
+		<result property="group_file_id" column="GROUP_FILE_ID" nullValue=""/>
+		<result property="eqp_no" column="EQP_NO" nullValue=""/>
+		<result property="group_file_id_check" column="GROUP_FILE_ID_CHECK" nullValue=""/>
+	</resultMap>
+	
+	<!-- [순시결과 - 접지저항측정점검] 상세 목록 조회 (하단부분) -->
+	<select id="InsResult.getInsResult028SubList" parameterClass="box" resultMap="Result.getInsResult028SubList" >
+		SELECT
+		    TB1.RESULT_IDX  <!-- 결과 고유번호 -->
+		    ,TB1.EQP_NO  <!-- 지지물번호 -->
+		    ,TB1.EQP_NM  <!-- 지지물번호 -->
+		    ,TB1.INS_DATE   <!-- 순시시각 -->
+		    ,TB1.VALUE_1 <!-- 과도접지저항 측정 1 -->
+		    ,TB1.VALUE_2  <!-- 과도접지저항 측정 2 -->
+		    ,TB1.VALUE_3 <!-- 과도접지저항 측정 3 -->
+		    ,TB1.VALUE_5  <!-- 과도접지저항 측정 5 -->
+		    ,TB1.VALUE_10  <!-- 과도접지저항 측정 10 -->
+		    ,TB2.MSR_CO  <!-- 횟수 -->
+		    ,TB2.GOOD_SECD  <!-- 양부판정 -->
+		    ,TB2.PMTTR <!-- 비고 -->
+		    ,TB2.GROUP_FILE_ID <!-- 그룹파일아이디 -->
+		    ,CASE WHEN TB2.GROUP_FILE_ID IS NULL THEN '0'
+             ELSE '1'
+             END AS GROUP_FILE_ID_CHECK
+		FROM  (
+		    SELECT 
+		            RESULT_IDX
+		            , EQP_NO 
+		            , EQP_NM 
+		            , INS_DATE 
+		            , MAX(DECODE(MSR_ODR,1,MSR_RS)) VALUE_1 <!-- 과도접지저항 측정1 -->
+		            , MAX(DECODE(MSR_ODR,2,MSR_RS)) VALUE_2 <!-- 과도접지저항 측정2 -->
+		            , MAX(DECODE(MSR_ODR,3,MSR_RS)) VALUE_3 <!-- 과도접지저항 측정3 -->
+		            , MAX(DECODE(MSR_ODR,4,MSR_RS)) VALUE_5 <!-- 과도접지저항 측정5 -->
+		            , MAX(DECODE(MSR_ODR,5,MSR_RS)) VALUE_10 <!-- 과도접지저항 측정10 -->
+		        FROM (
+		            SELECT
+		                BB.RESULT_IDX 
+		                , AA.EQP_NO 
+		                , CC.CHARTR_VALUE AS EQP_NM
+		                , TO_CHAR(AA.INS_DATE, 'YYYY-MM-DD hh24:mi') INS_DATE 
+		                , DD.MSR_RS
+		                , DD.MSR_ODR
+		            FROM M_RESULT_MASTER_T AA 
+		            INNER JOIN M_RESULT_EE_T BB ON AA.MASTER_IDX = BB.MASTER_IDX 
+		            INNER JOIN M_RESULT_EEEE_T DD ON DD.RESULT_IDX = BB.RESULT_IDX 
+		            INNER JOIN OP_EQP_ITEM_T CC ON AA.EQP_NO = CC.EQP_NO AND CC.CHARTR_CD = 'PM-A-0002'
+		            WHERE AA.SCHEDULE_ID = trim(#schedule_id#) 
+		        ) TOTAL_RESULT
+		        GROUP BY RESULT_IDX, EQP_NO, EQP_NM, INS_DATE
+		)  TB1  
+		INNER JOIN  M_RESULT_EE_T TB2
+		    ON  TB1.RESULT_IDX = TB2.RESULT_IDX
+		ORDER BY TO_NUMBER(TB1.EQP_NM)     
+	</select>
+	
+	<resultMap id="Result.getInsResult027SubList"  class="box">
+		<result property="tower_idx" column="TOWER_IDX" nullValue=""/>
+		<result property="ins_date" column="INS_DATE" nullValue=""/>
+		<result property="fnct_lc_dtls" column="FNCT_LC_DTLS" nullValue=""/>
+		<result property="cndctr_co" column="CNDCTR_CO" nullValue=""/>
+		<result property="cndctr_sn" column="CNDCTR_SN" nullValue=""/>
+		<result property="rv" column="RV" nullValue=""/>
+		<result property="group_file_id" column="GROUP_FILE_ID" nullValue=""/>
+		<result property="eqp_no" column="EQP_NO" nullValue=""/>
+		<result property="group_file_id_check" column="GROUP_FILE_ID_CHECK" nullValue=""/>
+	</resultMap>
+	
+	<!-- [순시결과 - 전선접속개소점검] 상세 목록 조회 (하단부분) -->
+	<select id="InsResult.getInsResult027SubList" parameterClass="box" resultMap="Result.getInsResult027SubList" >
+			SELECT 
+			  TOWER_IDX <!-- 지지물번호 -->
+			  , INS_DATE <!-- 순시시각  -->
+			  , FNCT_LC_DTLS <!-- 회선명 -->
+			  , CNDCTR_CO <!-- 도체수 -->
+			  , CNDCTR_SN <!-- 위치 -->
+			  , LISTAGG(SANG||'_'||TTM_LOAD||'_'||CABL_TP||'_'||CNPT_TP||'_'||GAP_TP||'_'||GOOD_SECD,'@@') WITHIN GROUP (ORDER BY TOWER_IDX, FNCT_LC_DTLS, CNDCTR_CO, SANG) RV
+			  , EQP_NO
+			  , GROUP_FILE_ID
+			  ,CASE WHEN GROUP_FILE_ID IS NULL THEN '0'
+               ELSE '1'
+               END AS GROUP_FILE_ID_CHECK
+			FROM (
+			  SELECT 
+				  (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = RM.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0002') AS TOWER_IDX
+				  , TO_CHAR(RM.INS_DATE, 'YYYY-MM-DD hh24:mi') AS INS_DATE 
+				  , TRACKS.FNCT_LC_DTLS 
+				  , CC.TTM_LOAD 
+				  , CC.CNDCTR_CO 
+				  , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = CCCC.PWLN_EQP_NO AND OEI.CHARTR_CD = 'PM-A-0020') AS SANG
+				  , CCCC.CNDCTR_SN 
+				  , CABL_TP
+				  , CNPT_TP 
+				  , CASE
+	                    WHEN NVL(CABL_TP,0) &gt; NVL(CNPT_TP,0) THEN
+	                        NVL(CABL_TP,0) - NVL(CNPT_TP,0)
+	                    WHEN NVL(CABL_TP,0) &lt; NVL(CNPT_TP,0) THEN
+	                        NVL(CNPT_TP,0) - NVL(CABL_TP,0)
+	                    ELSE
+	                        0
+	                END AS GAP_TP 
+				  , CCCC.GOOD_SECD 
+				  , CC.GROUP_FILE_ID
+				  , RM.EQP_NO
+			  FROM M_RESULT_MASTER_T RM 
+			  INNER JOIN M_RESULT_CC_T CC ON CC.MASTER_IDX = RM.MASTER_IDX 
+			  INNER JOIN M_RESULT_CCCC_T CCCC ON CCCC.RESULT_IDX = CC.RESULT_IDX 
+			  INNER JOIN OP_FUNCTION_HEADER_T TRACKS ON TRACKS.FNCT_LC_NO = CCCC.CL_NO AND TRACKS.FNCT_LC_TY = 'FL06' AND TRACKS.FNCT_LC_STTUS = 'I' 
+			  WHERE RM.SCHEDULE_ID = trim(#schedule_id#)     
+			) AAAA 
+			GROUP BY TOWER_IDX, INS_DATE, FNCT_LC_DTLS, CNDCTR_CO, CNDCTR_SN, EQP_NO, GROUP_FILE_ID 
+			ORDER BY TO_NUMBER(TOWER_IDX), FNCT_LC_DTLS, CNDCTR_SN 
+	</select>
+	
+	<resultMap id="Result.getInsResult026SubList"  class="box">
+		<result property="tower_idx" column="TOWER_IDX" nullValue=""/>
+		<result property="ins_date" column="INS_DATE" nullValue=""/>
+		<result property="fnct_lc_dtls" column="FNCT_LC_DTLS" nullValue=""/>
+		<result property="cndctr_co" column="CNDCTR_CO" nullValue=""/>
+		<result property="cndctr_sn" column="CNDCTR_SN" nullValue=""/>
+		<result property="rv" column="RV" nullValue=""/>
+		<result property="group_file_id" column="GROUP_FILE_ID" nullValue=""/>
+		<result property="eqp_no" column="EQP_NO" nullValue=""/>
+		<result property="group_file_id_check" column="GROUP_FILE_ID_CHECK" nullValue=""/>
+	</resultMap>
+	
+	<!-- [순시결과 - 점퍼접속개소점검] 상세 목록 조회 (하단부분) -->
+	<select id="InsResult.getInsResult026SubList" parameterClass="box" resultMap="Result.getInsResult026SubList" >
+		SELECT 
+			  TOWER_IDX <!-- 지지물번호 -->
+			  , INS_DATE <!-- 순시시각  -->
+			  , FNCT_LC_DTLS <!-- 회선명 -->
+			  , CNDCTR_CO <!-- 도체수 -->
+			  , CNDCTR_SN <!-- 위치 -->
+			  , LISTAGG(SANG||'_'||TTM_LOAD||'_'||CABL_TP||'_'||CNPT_TP||'_'||GAP_TP||'_'||GOOD_SECD,'@@') WITHIN GROUP (ORDER BY TOWER_IDX, FNCT_LC_DTLS, CNDCTR_CO, SANG) RV
+			  , GROUP_FILE_ID
+			  , EQP_NO
+			  ,CASE WHEN BB.GROUP_FILE_ID IS NULL THEN '0'
+               ELSE '1'
+               END AS GROUP_FILE_ID_CHECK
+			FROM (
+			  SELECT 
+				  (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = RM.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0002') AS TOWER_IDX
+				  , TO_CHAR(RM.INS_DATE, 'YYYY-MM-DD hh24:mi') AS INS_DATE  
+				  , TRACKS.FNCT_LC_DTLS 
+				  , CC.TTM_LOAD 
+				  , CC.CNDCTR_CO 
+				  , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = CCCC.PWLN_EQP_NO AND OEI.CHARTR_CD = 'PM-A-0020') AS SANG
+				  , CCCC.CNDCTR_SN 
+				  , CABL_TP
+				  , CNPT_TP 
+				  , CASE
+	                    WHEN NVL(CABL_TP,0) &gt; NVL(CNPT_TP,0) THEN
+	                        NVL(CABL_TP,0) - NVL(CNPT_TP,0)
+	                    WHEN NVL(CABL_TP,0) &lt; NVL(CNPT_TP,0) THEN
+	                        NVL(CNPT_TP,0) - NVL(CABL_TP,0)
+	                    ELSE
+	                        0
+	                END AS GAP_TP 
+				  , CCCC.GOOD_SECD 
+				  , CC.GROUP_FILE_ID
+				  , RM.EQP_NO
+			  FROM M_RESULT_MASTER_T RM 
+			  INNER JOIN M_RESULT_BB_T CC ON CC.MASTER_IDX = RM.MASTER_IDX 
+			  INNER JOIN M_RESULT_BBBB_T CCCC ON CCCC.RESULT_IDX = CC.RESULT_IDX 
+			  INNER JOIN OP_FUNCTION_HEADER_T TRACKS ON TRACKS.FNCT_LC_NO = CCCC.CL_NO AND TRACKS.FNCT_LC_TY = 'FL06' AND TRACKS.FNCT_LC_STTUS = 'I' 
+			  WHERE RM.SCHEDULE_ID = trim(#schedule_id#)     
+			) AAAA 
+			GROUP BY TOWER_IDX, INS_DATE, FNCT_LC_DTLS, CNDCTR_CO, CNDCTR_SN, EQP_NO, GROUP_FILE_ID
+			ORDER BY TO_NUMBER(TOWER_IDX), FNCT_LC_DTLS, CNDCTR_SN 
+	</select>
+	
+	<resultMap id="Result.getInsResult003SubList"  class="box">
+		<result property="before_eqp_no" column="before_eqp_no" nullValue=""/>
+		<result property="after_eqp_no" column="after_eqp_no" nullValue=""/>
+		<result property="cwrk_spt_nm" column="cwrk_spt_nm" nullValue=""/>
+		<result property="tins_result_secd" column="tins_result_secd" nullValue=""/>
+		<result property="tins_result" column="tins_result" nullValue=""/>
+	</resultMap>
+
+	<!-- [순시결과 - 예방순시] 상세 목록 조회 (하단부분) -->		
+	<select id="InspectionResult.getPreventingInspectionList" parameterClass="box" resultMap="Result.getInsResult003SubList">
+		SELECT before_eqp_no
+				, after_eqp_no
+				, cwrk_spt_nm
+				, tins_result_secd
+				, tins_result
+		FROM ot_prvt_tins_rlt_t
+	</select>
+	
+	<delete id="InspectionResult.setMasterDelete" parameterClass="box">
+		DELETE FROM m_result_master_t
+	</delete>
+	
+	<delete id="InspectionResult.set001Delete" parameterClass="box">
+		DELETE FROM m_result_aa_t
+	</delete>
+	
+	<delete id="InspectionResult.set026Delete" parameterClass="box">
+		DELETE FROM m_result_bb_t
+	</delete>
+	
+	<delete id="InspectionResult.setSub026Delete" parameterClass="box">
+		DELETE FROM m_result_bbbb_t
+	</delete>
+	
+	<delete id="InspectionResult.set027Delete" parameterClass="box">
+		DELETE FROM m_result_cc_t
+	</delete>
+	
+	<delete id="InspectionResult.setSub027Delete" parameterClass="box">
+		DELETE FROM m_result_cccc_t
+	</delete>
+	
+	<delete id="InspectionResult.set025Delete" parameterClass="box">
+		DELETE FROM m_result_dd_t
+	</delete>
+	
+	<delete id="InspectionResult.set028Delete" parameterClass="box">
+		DELETE FROM m_result_ee_t
+	</delete>
+	
+	<delete id="InspectionResult.setSub028Delete" parameterClass="box">
+		DELETE FROM m_result_eeee_t
+	</delete>
+	
+	<delete id="InspectionResult.set029Delete" parameterClass="box">
+		DELETE FROM m_result_ff_t
+	</delete>
+	
+	<delete id="InspectionResult.setSub021Delete" parameterClass="box">
+		DELETE FROM m_result_gggg_t
+	</delete>
+	
+	<delete id="InspectionResult.set024Delete" parameterClass="box">
+		DELETE FROM m_result_hh_t
+	</delete>   
+</sqlMap>

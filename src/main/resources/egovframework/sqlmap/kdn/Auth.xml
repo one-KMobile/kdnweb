@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Auth">
+	
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	
+	<resultMap id="Result.getAuthList"  class="box">
+		<result property="auth_idx" column="AUTH_IDX" nullValue=""/>
+		<result property="auth_id" column="AUTH_ID" nullValue=""/>
+		<result property="auth_nm" column="AUTH_NM" nullValue=""/>
+		<result property="auth_account" column="AUTH_ACCOUNT" nullValue=""/>
+		<result property="reg_date" column="REG_DATE" nullValue=""/>
+		<result property="reg_date_string" column="REG_DATE_STRING" nullValue=""/>
+		<result property="reg_id" column="REG_ID" nullValue=""/>
+		<result property="use_yn" column="USE_YN" nullValue=""/>
+	</resultMap>
+	
+	<!-- [권한] 목록 조회 -->
+	<select id="Auth.getAuthList" parameterClass="box" resultMap="Result.getAuthList" >
+		SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+			SELECT 
+				  AUTH_IDX     
+				  ,AUTH_ID       
+				  ,AUTH_NM      
+				  ,AUTH_ACCOUNT
+				  ,REG_DATE
+				  ,TO_CHAR(REG_DATE , 'YYYY-MM-DD') AS REG_DATE_STRING      
+				  ,REG_ID   
+				  ,USE_YN  
+		  	FROM M_AUTH_T  
+		  	WHERE 1=1
+		  	<isNotEmpty property="searchWrd" >
+			  	<isEqual prepend="AND" property="searchCnd" compareValue="All">
+			           (AUTH_ID LIKE '%' ||#searchWrd#|| '%' or AUTH_NM LIKE '%' ||#searchWrd#|| '%') 
+		        </isEqual>
+		        <isEqual prepend="AND" property="searchCnd" compareValue="authId">
+			            AUTH_ID LIKE '%' ||#searchWrd#|| '%'
+		        </isEqual>
+		        <isEqual prepend="AND" property="searchCnd" compareValue="authNm">
+			            AUTH_NM LIKE '%' ||#searchWrd#|| '%'
+		        </isEqual>
+	        </isNotEmpty>
+	        ORDER BY AUTH_IDX DESC
+        ) TB ) WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+						
+	</select>	
+	
+	<!-- [권한] 목록 카운트 조회 -->
+	<select id="Auth.getAuthListTotCnt" parameterClass="box" resultClass="int">
+			SELECT 
+				COUNT(*) totcnt
+			FROM M_AUTH_T
+			WHERE 1=1
+			<isNotEmpty property="searchWrd" >
+			  	<isEqual prepend="AND" property="searchCnd" compareValue="All">
+			           (AUTH_ID LIKE '%' ||#searchWrd#|| '%' or AUTH_NM LIKE '%' ||#searchWrd#|| '%') 
+		        </isEqual>
+		        <isEqual prepend="AND" property="searchCnd" compareValue="authId">
+			            AUTH_ID LIKE '%' ||#searchWrd#|| '%'
+		        </isEqual>
+		        <isEqual prepend="AND" property="searchCnd" compareValue="authNm">
+			            AUTH_NM LIKE '%' ||#searchWrd#|| '%'
+		        </isEqual>
+	        </isNotEmpty>
+	</select>
+	
+	<resultMap id="Result.getAuthView" class="box">
+		<result property="auth_idx" column="AUTH_IDX" nullValue=""/>
+		<result property="auth_id" column="AUTH_ID" nullValue=""/>
+		<result property="auth_nm" column="AUTH_NM" nullValue=""/>
+		<result property="auth_account" column="AUTH_ACCOUNT" nullValue=""/>
+		<result property="reg_date" column="REG_DATE" nullValue=""/>
+		<result property="reg_date_string" column="REG_DATE_STRING" nullValue=""/>
+		<result property="reg_id" column="REG_ID" nullValue=""/>
+		<result property="upd_date" column="REG_DATE" nullValue=""/>
+		<result property="upd_date_string" column="UPD_DATE_STRING" nullValue=""/>
+		<result property="upd_id" column="UPD_ID" nullValue=""/>
+		<result property="use_yn" column="USE_YN" nullValue=""/>
+	</resultMap>
+	
+	<!-- [권한] 정보 조회  -->
+	<select id="Auth.getAuthView" parameterClass="box" resultMap="Result.getAuthView" >
+		<![CDATA[
+			SELECT
+			      AUTH_IDX     
+				  ,AUTH_ID       
+				  ,AUTH_NM      
+				  ,AUTH_ACCOUNT
+				  ,REG_DATE
+				  ,TO_CHAR(REG_DATE , 'YYYY-MM-DD') AS REG_DATE_STRING      
+				  ,REG_ID
+				  ,UPD_DATE
+				  ,TO_CHAR(UPD_DATE , 'YYYY-MM-DD') AS UPD_DATE_STRING
+				  ,UPD_ID
+				  ,USE_YN 
+		  	FROM 
+		  		M_AUTH_T
+			WHERE
+				AUTH_IDX = #auth_idx#	
+		]]>				
+	</select>
+	
+	<!-- [권한] 등록 저장 --> 
+	<insert id="Auth.authSave" parameterClass="box">
+		<![CDATA[
+			INSERT INTO M_AUTH_T ( 
+				  AUTH_IDX     
+				  ,AUTH_ID       
+				  ,AUTH_NM      
+				  ,AUTH_ACCOUNT
+				  ,REG_DATE
+				  ,REG_ID   
+				  ,USE_YN 
+			 )VALUES ( 
+					SEQ_M_AUTH_T.NEXTVAL
+					,trim(#auth_id#)
+					,#auth_nm#
+					,#auth_account#
+					,SYSDATE
+					,#reg_id#
+					,#use_yn#
+			  )
+		]]>
+	</insert>
+	
+	<!-- [권한] 수정  -->
+	<update id="Auth.authUpdate" parameterClass="box">
+		<![CDATA[
+			UPDATE M_AUTH_T SET
+					AUTH_NM = #auth_nm#
+				    ,AUTH_ACCOUNT = #auth_account#
+				    ,USE_YN = #use_yn#
+					,UPD_DATE = SYSDATE
+					,UPD_ID = #upd_id# 
+			WHERE AUTH_IDX = #auth_idx# 
+		]]>
+	</update>
+	
+	<!-- [권한] 삭제  -->
+	<delete id="Auth.authDelete" parameterClass="box">
+			DELETE FROM M_AUTH_T
+			WHERE AUTH_IDX IN (<iterate property="chk" conjunction=",">#chk[]#</iterate>)	 
+ 	</delete>
+ 	
+	<!-- [권한] 권한ID 중복 체크 카운트 -->
+	<select id="Auth.getAuthIdOverlapCount" parameterClass="box" resultClass="int">
+			SELECT 
+				COUNT(*) totCnt
+			FROM M_AUTH_T 
+			WHERE 1=1
+			AND AUTH_ID = trim(#auth_id#)
+	</select>
+	
+	
+	<resultMap id="Result.getMenuGrantAuthList"  class="box">
+		<result property="menu_id" column="MENU_ID" nullValue=""/>
+		<result property="menu_nm" column="MENU_NM" nullValue=""/>
+		<result property="top_menu_id" column="TOP_MENU_ID" nullValue=""/>
+		<result property="use_yn" column="USE_YN" nullValue=""/>
+		<result property="auth_read" column="AUTH_READ" nullValue=""/>
+		<result property="auth_write" column="AUTH_WRITE" nullValue=""/>
+		<result property="top_menu_id_count" column="TOP_MENU_ID_COUNT" nullValue=""/>
+	</resultMap>
+	
+	<!-- [메뉴 권한] 메뉴 권한을 주기위한 리스트 -->
+	<select id="Auth.getMenuGrantAuthList" parameterClass="box" resultMap="Result.getMenuGrantAuthList" >
+		SELECT 
+		      OMN.MENU_ID            
+		      ,OMN.MENU_NM          
+		      ,OMN.TOP_MENU_ID     
+		      ,OMN.USE_YN
+		      ,NVL((SELECT AUTH_READ FROM M_GRANT_AUTH_T GA WHERE GA.MENU_ID = OMN.MENU_ID AND GA.AUTH_ID = trim(#auth_id#) ), 'N') AS AUTH_READ
+              ,NVL((SELECT AUTH_WRITE FROM M_GRANT_AUTH_T GA WHERE GA.MENU_ID = OMN.MENU_ID AND GA.AUTH_ID = trim(#auth_id#) ), 'N') AS AUTH_WRITE
+              ,(SELECT COUNT(MN.TOP_MENU_ID) FROM M_MENU_T MN WHERE MN.TOP_MENU_ID =  OMN.MENU_ID) AS TOP_MENU_ID_COUNT    
+		  FROM M_MENU_T OMN 
+		  WHERE 1=1
+		  AND OMN.USE_YN = 'Y'
+		  <isNotEmpty property="subMenuId">
+		  AND OMN.TOP_MENU_ID = trim(#subMenuId#)
+		  </isNotEmpty>
+		  <isEmpty property="subMenuId">
+		  AND OMN.TOP_MENU_ID = '000000'
+		  </isEmpty>
+		  AND OMN.MENU_ID &lt;&gt; '000000'
+		  ORDER BY OMN.MENU_ID ASC ,OMN.TOP_MENU_ID ASC
+	</select>
+	
+	<!-- [메뉴 권한] 메뉴 권한 주기 (Insert) --> 
+	<insert id="Auth.menuGrantAuthSave" parameterClass="box">
+		<![CDATA[
+			INSERT INTO M_GRANT_AUTH_T ( 
+				  MENU_ID     
+				  ,AUTH_ID     
+				  ,AUTH_YN    
+				  ,AUTH_READ 
+				  ,AUTH_WRITE 
+			 )VALUES ( 
+				  trim(#menu_id#)
+				  ,trim(#auth_id#)
+				  ,'Y'
+				  ,NVL(#auth_read#,'N')
+				  ,NVL(#auth_write#,'N')	
+			  )
+		]]>
+	</insert>
+	
+	<!-- [메뉴 권한] 메뉴 권한 주기 (Update)  -->
+	<update id="Auth.menuGrantAuthUpdate" parameterClass="box">
+			UPDATE M_GRANT_AUTH_T SET
+				<isNotEmpty property="type">
+				   	<isEqual property="type" compareValue="read">
+				   		AUTH_READ =  NVL(#auth_read#,'N')
+				   	</isEqual>
+				   	<isEqual property="type" compareValue="write">
+				  		AUTH_WRITE = NVL(#auth_write#,'N')
+				   	</isEqual>
+				</isNotEmpty>   	
+			WHERE MENU_ID = trim(#menu_id#)
+		    AND AUTH_ID =trim(#auth_id#)
+	</update>
+	
+	<!-- [메뉴 권한] 메뉴 권한 카운트 체크-->
+	<select id="Auth.getMenuGrantAuthCnt" parameterClass="box" resultClass="int">
+		SELECT 
+			COUNT(*) as totcnt 
+		FROM M_GRANT_AUTH_T 
+		WHERE MENU_ID = trim(#menu_id#)
+		AND AUTH_ID =trim(#auth_id#)	
+	</select>
+	
+	<resultMap id="Result.getLeftMenuList"  class="box">
+		<result property="menu_id" column="MENU_ID" nullValue=""/>
+		<result property="menu_nm" column="MENU_NM" nullValue=""/>
+		<result property="top_menu_id" column="TOP_MENU_ID" nullValue=""/>
+		<result property="use_yn" column="USE_YN" nullValue=""/>
+		<result property="auth_read" column="AUTH_READ" nullValue=""/>
+		<result property="auth_write" column="AUTH_WRITE" nullValue=""/>
+		<result property="top_menu_id_count" column="TOP_MENU_ID_COUNT" nullValue=""/>
+		<result property="controller_method" column="CONTROLLER_METHOD" nullValue=""/>
+		<result property="subMenuList"	column="{menu_id=MENU_ID, user_auth=USERAUTH}" select="Auth.getLeftSubMenuList" javaType="java.util.ArrayList"/>
+	</resultMap>
+	
+	<!-- [메뉴 권한] 좌측 메뉴 리스트 가져오기 -->
+	<select id="Auth.getLeftMenuList" parameterClass="box" resultMap="Result.getLeftMenuList" >
+		SELECT 
+		      OMN.MENU_ID            
+		      ,OMN.MENU_NM          
+		      ,OMN.TOP_MENU_ID     
+		      ,OMN.USE_YN
+		      ,NVL((SELECT AUTH_READ FROM M_GRANT_AUTH_T GA WHERE GA.MENU_ID = OMN.MENU_ID AND GA.AUTH_ID = trim(#user_auth#) ), 'N') AS AUTH_READ
+              ,NVL((SELECT AUTH_WRITE FROM M_GRANT_AUTH_T GA WHERE GA.MENU_ID = OMN.MENU_ID AND GA.AUTH_ID = trim(#user_auth#) ), 'N') AS AUTH_WRITE
+              ,(SELECT COUNT(MN.TOP_MENU_ID) FROM M_MENU_T MN WHERE MN.TOP_MENU_ID =  OMN.MENU_ID) AS TOP_MENU_ID_COUNT 
+              ,OMN.CONTROLLER_METHOD   
+              , #user_auth# as USERAUTH
+		  FROM M_MENU_T OMN 
+		  WHERE 1=1
+		  AND OMN.USE_YN = 'Y'
+		  AND OMN.MENU_ID &lt;&gt; '000000'
+		  ORDER BY OMN.MENU_ID ASC ,OMN.TOP_MENU_ID ASC
+	</select>
+	
+	<resultMap id="Result.getLeftSubMenuList"  class="box">
+		<result property="menu_id" column="MENU_ID" nullValue=""/>
+		<result property="menu_nm" column="MENU_NM" nullValue=""/>
+		<result property="top_menu_id" column="TOP_MENU_ID" nullValue=""/>
+		<result property="use_yn" column="USE_YN" nullValue=""/>
+		<result property="auth_read" column="AUTH_READ" nullValue=""/>
+		<result property="auth_write" column="AUTH_WRITE" nullValue=""/>
+		<result property="top_menu_id_count" column="TOP_MENU_ID_COUNT" nullValue=""/>
+		<result property="controller_method" column="CONTROLLER_METHOD" nullValue=""/>
+	</resultMap>
+	
+	<!-- [메뉴 권한] 좌측 메뉴 하위 리스트 가져오기 -->
+	<select id="Auth.getLeftSubMenuList" parameterClass="box" resultMap="Result.getLeftSubMenuList" >
+		SELECT 
+		      OMN.MENU_ID            
+		      ,OMN.MENU_NM          
+		      ,OMN.TOP_MENU_ID     
+		      ,OMN.USE_YN
+		      ,NVL((SELECT AUTH_READ FROM M_GRANT_AUTH_T GA WHERE GA.MENU_ID = OMN.MENU_ID AND GA.AUTH_ID = trim(#user_auth#) ), 'N') AS AUTH_READ
+              ,NVL((SELECT AUTH_WRITE FROM M_GRANT_AUTH_T GA WHERE GA.MENU_ID = OMN.MENU_ID AND GA.AUTH_ID = trim(#user_auth#) ), 'N') AS AUTH_WRITE
+              ,(SELECT COUNT(MN.TOP_MENU_ID) FROM M_MENU_T MN WHERE MN.TOP_MENU_ID =  OMN.MENU_ID) AS TOP_MENU_ID_COUNT 
+              ,OMN.CONTROLLER_METHOD   
+		  FROM M_MENU_T OMN 
+		  WHERE 1=1
+		  AND OMN.USE_YN = 'Y'
+		  AND OMN.TOP_MENU_ID = trim(#menu_id#)
+		  AND OMN.MENU_ID &lt;&gt; '000000'
+		  ORDER BY OMN.MENU_ID ASC ,OMN.TOP_MENU_ID ASC
+	</select>
+	
+	<!-- [권한] user 권한 카운트 조회  -->
+	<select id="Auth.authUserInfoCnt" parameterClass="box" resultClass="int">	
+		SELECT 
+			COUNT(*) AS totCnt
+        FROM M_GRANT_AUTH_T TB1
+        INNER JOIN M_MENU_T TB3
+            ON TB3.MENU_ID =  TB1.MENU_ID
+            AND  TB1.AUTH_ID = trim(#user_auth#)
+            <isNotEmpty property="isSubMenu">
+            	<isEqual property="isSubMenu"  compareValue="Y">
+            		AND TB3.TOP_MENU_ID > TO_NUMBER('000000')	
+            	</isEqual>
+            </isNotEmpty> 
+            AND TB3.CONTROLLER_METHOD = trim(#controller_method#)   
+        WHERE TB1.AUTH_YN = 'Y'
+        AND TB3.USE_YN = 'Y' 
+        <isNotEmpty property="authType">
+        	<isEqual property="authType" compareValue="read">
+        		AND TB1.AUTH_READ = 'Y'
+        	</isEqual>
+        	<isEqual property="authType" compareValue="write">
+        		AND TB1.AUTH_WRITE = 'Y'
+        	</isEqual>
+        </isNotEmpty>
+	</select>
+	
+	<resultMap id="Result.getAuthCodeValue"  class="box">
+		<result property="code_value" column="code_value" nullValue=""/>
+		<result property="code_name" column="code_name" nullValue=""/>
+	</resultMap>
+	
+	<!-- [권한] 코드값 호출 -->
+	<select id="Auth.getAuthCodeValue" parameterClass="box" resultMap="Result.getAuthCodeValue">
+		SELECT auth_id AS code_value
+				, auth_nm AS code_name 
+		FROM m_auth_t
+	</select>
+</sqlMap>

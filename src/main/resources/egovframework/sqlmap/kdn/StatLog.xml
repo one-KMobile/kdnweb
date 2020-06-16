@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="StatLog">
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	
+
+	<!--  기기별 점검 목록	마스터 -->
+	
+
+	
+
+
+	<!--  기기별 점검 insert	 -->
+	
+
+	<!--  기기별 점검 목록	 -->
+	
+	
+	<resultMap id="StatLog.getStatLogList" class="box">
+		<result property="statDateCount" column="statDateCount" />
+		<result property="statDate" column="statDate" />
+	</resultMap>
+	<select id="StatLog.getStatDDLogList" parameterClass="box" resultMap="StatLog.getStatLogList">
+SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+	SELECT TO_CHAR(reg_date,'YYYY-MM-DD') statDate , count(user_id) statDateCount FROM (      
+               	SELECT
+                    DISTINCT muser.USER_ID user_id , mlog.LOG_IDX , mlog.REG_DATE reg_date
+                    FROM                     m_log_t mlog      
+                INNER JOIN  m_user_t muser  ON mlog.REG_ID = muser.USER_ID      
+                INNER JOIN  m_bizplc_t bizplc ON muser.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD
+                 AND muser.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD   
+                 WHERE 1=1    
+					<isNotEmpty prepend="AND" property="fst_bizplc_cd" >	            
+	    				muser.FST_BIZPLC_CD = #fst_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="scd_bizplc_cd" > 
+	            		muser.SCD_BIZPLC_CD= #scd_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="log_type" > 
+	            		LOG_TYPE= #log_type#
+	    			</isNotEmpty>
+	    			 <isNotEmpty prepend="AND" property="cont_startdate" > 
+	            		<![CDATA[
+	            		mlog.REG_DATE > to_date(#cont_startdate# ,'yyyymmddhh24miss')
+						]]>            		 
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="cont_enddate" >
+	            		<![CDATA[
+	            		mlog.REG_DATE < to_date(#cont_enddate#, 'yyyymmddhh24miss')
+	            	 	]]>
+	    			</isNotEmpty>
+	   		)
+	group by TO_CHAR(reg_date,'YYYY-MM-DD')
+	order by TO_CHAR(reg_date,'YYYY-MM-DD') desc
+	) TB
+	)WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+</select>
+
+<select id="StatLog.getStatDDLogListTotCnt" parameterClass="box" resultClass="int">
+select count(*) from (
+SELECT TO_CHAR(reg_date,'YYYY-MM-DD') day , count(user_id) dayCount FROM (      
+               	SELECT
+                    DISTINCT muser.USER_ID user_id , mlog.LOG_IDX , mlog.REG_DATE reg_date
+                    FROM                     m_log_t mlog      
+                INNER JOIN  m_user_t muser  ON mlog.REG_ID = muser.USER_ID      
+                INNER JOIN  m_bizplc_t bizplc ON muser.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD
+                 AND muser.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD   
+                 WHERE 1=1    
+					<isNotEmpty prepend="AND" property="fst_bizplc_cd" >	            
+	    				muser.FST_BIZPLC_CD = #fst_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="scd_bizplc_cd" > 
+	            		muser.SCD_BIZPLC_CD= #scd_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="log_type" > 
+	            		LOG_TYPE= #log_type#
+	    			</isNotEmpty>
+	    			 <isNotEmpty prepend="AND" property="cont_startdate" > 
+	            		<![CDATA[
+	            		mlog.REG_DATE > to_date(#cont_startdate# ,'yyyymmddhh24miss')
+						]]>            		 
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="cont_enddate" >
+	            		<![CDATA[
+	            		mlog.REG_DATE < to_date(#cont_enddate#, 'yyyymmddhh24miss')
+	            	 	]]>
+	    			</isNotEmpty>
+	   		)
+	group by TO_CHAR(reg_date,'YYYY-MM-DD')
+	)
+</select>
+
+
+<select id="StatLog.getStatMMLogList" resultMap="StatLog.getStatLogList" parameterClass="box">
+SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+	SELECT TO_CHAR(reg_date,'YYYY-MM') statDate , count(user_id) statDateCount FROM (      
+               	SELECT
+                    DISTINCT muser.USER_ID user_id , mlog.LOG_IDX , mlog.REG_DATE reg_date
+                    FROM                     m_log_t mlog      
+                INNER JOIN  m_user_t muser  ON mlog.REG_ID = muser.USER_ID      
+                INNER JOIN  m_bizplc_t bizplc ON muser.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD
+                 AND muser.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD   
+                 WHERE 1=1    
+					<isNotEmpty prepend="AND" property="fst_bizplc_cd" >	            
+	    				muser.FST_BIZPLC_CD = #fst_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="scd_bizplc_cd" > 
+	            		muser.SCD_BIZPLC_CD= #scd_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="log_type" > 
+	            		LOG_TYPE= #log_type#
+	    			</isNotEmpty>
+	    			 <isNotEmpty prepend="AND" property="cont_startdate" > 
+	            		<![CDATA[
+	            		mlog.REG_DATE > to_date(#cont_startdate# ,'yyyymmddhh24miss')
+						]]>            		 
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="cont_enddate" >
+	            		<![CDATA[
+	            		mlog.REG_DATE < to_date(#cont_enddate#, 'yyyymmddhh24miss')
+	            	 	]]>
+	    			</isNotEmpty>
+	   		)
+	group by TO_CHAR(reg_date,'YYYY-MM')
+	order by TO_CHAR(reg_date,'YYYY-MM') desc
+	) TB
+	)WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+</select>
+<select id="StatLog.getStatMMLogListTotCnt" parameterClass="box" resultClass="int">
+select count(*) from (
+SELECT TO_CHAR(reg_date,'YYYY-MM') day , count(user_id) dayCount FROM (      
+               	SELECT
+                    DISTINCT muser.USER_ID user_id , mlog.LOG_IDX , mlog.REG_DATE reg_date
+                    FROM                     m_log_t mlog      
+                INNER JOIN  m_user_t muser  ON mlog.REG_ID = muser.USER_ID      
+                INNER JOIN  m_bizplc_t bizplc ON muser.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD
+                 AND muser.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD   
+                 WHERE 1=1    
+					<isNotEmpty prepend="AND" property="fst_bizplc_cd" >	            
+	    				muser.FST_BIZPLC_CD = #fst_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="scd_bizplc_cd" > 
+	            		muser.SCD_BIZPLC_CD= #scd_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="log_type" > 
+	            		LOG_TYPE= #log_type#
+	    			</isNotEmpty>
+	    			 <isNotEmpty prepend="AND" property="cont_startdate" > 
+	            		<![CDATA[
+	            		mlog.REG_DATE > to_date(#cont_startdate# ,'yyyymmddhh24miss')
+						]]>            		 
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="cont_enddate" >
+	            		<![CDATA[
+	            		mlog.REG_DATE < to_date(#cont_enddate#, 'yyyymmddhh24miss')
+	            	 	]]>
+	    			</isNotEmpty>
+	   		)
+	group by TO_CHAR(reg_date,'YYYY-MM')
+	)
+</select>
+<select id="StatLog.getStatYYLogList" parameterClass="box" resultMap="StatLog.getStatLogList">
+SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+	SELECT TO_CHAR(reg_date,'YYYY') statDate , count(user_id) statDateCount FROM (      
+               	SELECT
+                    DISTINCT muser.USER_ID user_id , mlog.LOG_IDX , mlog.REG_DATE reg_date
+                    FROM                     m_log_t mlog      
+                INNER JOIN  m_user_t muser  ON mlog.REG_ID = muser.USER_ID      
+                INNER JOIN  m_bizplc_t bizplc ON muser.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD
+                 AND muser.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD   
+                 WHERE 1=1    
+					<isNotEmpty prepend="AND" property="fst_bizplc_cd" >	            
+	    				muser.FST_BIZPLC_CD = #fst_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="scd_bizplc_cd" > 
+	            		muser.SCD_BIZPLC_CD= #scd_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="log_type" > 
+	            		LOG_TYPE= #log_type#
+	    			</isNotEmpty>
+	    			 <isNotEmpty prepend="AND" property="cont_startdate" > 
+	            		<![CDATA[
+	            		mlog.REG_DATE > to_date(#cont_startdate# ,'yyyymmddhh24miss')
+						]]>            		 
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="cont_enddate" >
+	            		<![CDATA[
+	            		mlog.REG_DATE < to_date(#cont_enddate#, 'yyyymmddhh24miss')
+	            	 	]]>
+	    			</isNotEmpty>
+	   		)
+	group by TO_CHAR(reg_date,'YYYY')
+	order by TO_CHAR(reg_date,'YYYY') desc
+	) TB
+	)WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+</select>
+<select id="StatLog.getStatYYLogListTotCnt" parameterClass="box" resultClass="int">
+select count(*) from (
+SELECT TO_CHAR(reg_date,'YYYY') day , count(user_id) dayCount FROM (      
+               	SELECT
+                    DISTINCT muser.USER_ID user_id , mlog.LOG_IDX , mlog.REG_DATE reg_date
+                    FROM                     m_log_t mlog      
+                INNER JOIN  m_user_t muser  ON mlog.REG_ID = muser.USER_ID      
+                INNER JOIN  m_bizplc_t bizplc ON muser.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD
+                 AND muser.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD   
+                 WHERE 1=1    
+					<isNotEmpty prepend="AND" property="fst_bizplc_cd" >	            
+	    				muser.FST_BIZPLC_CD = #fst_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="scd_bizplc_cd" > 
+	            		muser.SCD_BIZPLC_CD= #scd_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="log_type" > 
+	            		LOG_TYPE= #log_type#
+	    			</isNotEmpty>
+	    			 <isNotEmpty prepend="AND" property="cont_startdate" > 
+	            		<![CDATA[
+	            		mlog.REG_DATE > to_date(#cont_startdate# ,'yyyymmddhh24miss')
+						]]>            		 
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="cont_enddate" >
+	            		<![CDATA[
+	            		mlog.REG_DATE < to_date(#cont_enddate#, 'yyyymmddhh24miss')
+	            	 	]]>
+	    			</isNotEmpty>
+	   		)
+	group by TO_CHAR(reg_date,'YYYY')
+	)
+</select>
+</sqlMap>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TLog">
+	
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	
+	<resultMap id="Result.getTLogData" class="box">
+		<result property="user_id" column="USER_ID"/>
+		<result property="value_1" column="VALUE_1"/>
+		<result property="value_2" column="VALUE_2"/>
+		<result property="value_3" column="VALUE_3"/>
+		<result property="value_4" column="VALUE_4"/>
+		<result property="value_5" column="VALUE_5"/>
+		<result property="value_6" column="VALUE_6"/>
+		<result property="value_7" column="VALUE_7"/>
+		<result property="value_8" column="VALUE_8"/>
+		<result property="value_9" column="VALUE_9"/>
+		<result property="value_10" column="VALUE_10"/>
+		<result property="value_11" column="VALUE_11"/>
+		<result property="value_12" column="VALUE_12"/>
+		<result property="value_13" column="VALUE_13"/>
+		<result property="value_14" column="VALUE_14"/>
+		<result property="value_15" column="VALUE_15"/>
+		<result property="value_16" column="VALUE_16"/>
+		<result property="value_17" column="VALUE_17"/>
+		<result property="value_18" column="VALUE_18"/>
+		<result property="value_19" column="VALUE_19"/>
+		<result property="value_20" column="VALUE_20"/>
+		<result property="value_21" column="VALUE_21"/>
+		<result property="value_22" column="VALUE_22"/>
+		<result property="value_23" column="VALUE_23"/>
+		<result property="value_24" column="VALUE_24"/>
+		<result property="value_25" column="VALUE_25"/>
+		<result property="value_26" column="VALUE_26"/>
+		<result property="value_27" column="VALUE_27"/>
+		<result property="value_28" column="VALUE_28"/>
+		<result property="value_29" column="VALUE_29"/>
+		<result property="value_30" column="VALUE_30"/>
+		<result property="value_31" column="VALUE_31"/>
+	</resultMap>	
+	
+	<!-- [순시자 접속 로그표] 목록 조회-->
+	<select id="TLog.getTLogData" parameterClass="box" resultMap="Result.getTLogData">
+		SELECT
+		    USER_ID
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'01','O')) AS VALUE_1
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'02','O')) AS VALUE_2
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'03','O')) AS VALUE_3
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'04','O')) AS VALUE_4
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'05','O')) AS VALUE_5
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'06','O')) AS VALUE_6
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'07','O')) AS VALUE_7
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'08','O')) AS VALUE_8
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'09','O')) AS VALUE_9
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'10','O')) AS VALUE_10
+		    
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'11','O')) AS VALUE_11
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'12','O')) AS VALUE_12
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'13','O')) AS VALUE_13
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'14','O')) AS VALUE_14
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'15','O')) AS VALUE_15
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'16','O')) AS VALUE_16
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'17','O')) AS VALUE_17
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'18','O')) AS VALUE_18
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'19','O')) AS VALUE_19
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'20','O')) AS VALUE_20
+		    
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'21','O')) AS VALUE_21
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'22','O')) AS VALUE_22
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'23','O')) AS VALUE_23
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'24','O')) AS VALUE_24
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'25','O')) AS VALUE_25
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'26','O')) AS VALUE_26
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'27','O')) AS VALUE_27
+		    , MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'28','O')) AS VALUE_28
+    		, MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'29','O')) AS VALUE_29
+    		, MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'30','O')) AS VALUE_30
+    		, MAX(DECODE(TO_CHAR(CONN_DATE , 'DD'),'31','O')) AS VALUE_31
+		FROM(
+		    SELECT
+		        TB1.LOG_IDX 
+		        ,TB2.USER_ID 
+		        ,TB1.REG_DATE AS CONN_DATE
+		    FROM M_USER_T TB2
+		    LEFT JOIN M_LOG_T TB1
+		        ON TB1.REG_ID =  TB2.USER_ID AND TB1.LOG_TYPE = 1 <!-- App  -->
+		        AND TB1.REG_DATE &gt;= to_date(trim(#startDate#) , 'YYYY-MM-DD') 
+		        AND TB1.REG_DATE &lt;= to_date(trim(#endDate#) , 'YYYY-MM-DD') 
+		    WHERE 1=1
+		    AND TB2.USER_AUTH = 'KPS'
+		    AND TB2.FST_BIZPLC_CD = trim(#searchCnd1#)  
+		    AND TB2.SCD_BIZPLC_CD = trim(#searchCnd2#) 
+		)
+		GROUP BY USER_ID
+		ORDER BY USER_ID
+	</select>
+	
+	
+</sqlMap>

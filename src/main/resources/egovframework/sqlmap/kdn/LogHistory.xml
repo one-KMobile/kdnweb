@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap namespace="LogHistory">
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	<insert id="LogHistory.logSave" parameterClass="box" >
+	<![CDATA[
+		INSERT INTO m_log_t (
+					 LOG_IDX
+					,LOG_TYPE
+					,MAC_ADDRESS
+					,REMARKS
+					,REG_DATE
+					,REG_ID
+					 )VALUES ( 
+					 SEQ_M_LOG_T.NEXTVAL
+					,#log_type#	
+					,#mac_address#
+					,#remarks#
+					,SYSDATE
+					,#reg_id#
+					)
+	]]>
+	</insert>
+	<resultMap id="LogHistory.getLogList" class="box">
+		<result property="log_idx" column="LOG_IDX" />
+		<result property="log_type" column="LOG_TYPE" />
+		<result property="mac_address" column="MAC_ADDRESS" />
+		<result property="remarks" column="REMARKS" />
+		<result property="reg_date" column="REG_DATE" />
+		<result property="fst_bizplc_cd" column="FST_BIZPLC_CD" />
+		<result property="fst_bizplc_cd_nm" column="FST_BIZPLC_CD_NM" />
+		<result property="scd_bizplc_cd_nm" column="SCD_BIZPLC_CD_NM" />
+		<result property="scd_bizplc_cd" column="SCD_BIZPLC_CD" />
+		<result property="user_name" column="USER_NAME" />
+		<result property="mac_address" column="MAC_ADDRESS" />
+		<result property="user_id" column="USER_ID"/>
+	</resultMap>
+
+	<select id="LogHistory.getLogList" parameterClass="box" resultMap="LogHistory.getLogList">
+		SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+	    SELECT * FROM (
+			  SELECT 
+				muser.REG_ID
+				,mlog.LOG_IDX  
+				,mlog.LOG_TYPE
+				,mlog.MAC_ADDRESS
+				,mlog.REMARKS
+				,TO_CHAR(mlog.REG_DATE , 'YYYY-MM-DD HH24-MM-SS') AS REG_DATE
+				,muser.BIZPLC_IDX
+				,muser.USER_NAME
+				,bizplc.FST_BIZPLC_NAME
+				,bizplc.SCD_BIZPLC_NAME
+				,bizplc.FST_BIZPLC_CODE
+				,bizplc.SCD_BIZPLC_CODE
+			 FROM
+				m_log_t mlog 
+				INNER JOIN 
+  				(SELECT MAX(LOG_IDX) LOG_IDX   FROM M_LOG_T
+  					GROUP BY reg_id ) AA
+  					ON mlog.LOG_IDX = AA.LOG_IDX
+				INNER JOIN m_user_t muser   ON mlog.REG_ID = muser.REG_ID 
+				INNER JOIN m_bizplc_t bizplc ON muser.BIZPLC_IDX = bizplc.BIZPLC_IDX
+			    WHERE 1=1
+			     	<isNotEmpty prepend="AND" property="reg_id" >
+	            	muser.REG_ID LIKE '%' ||#reg_id#|| '%'
+		    	  	</isNotEmpty>
+		    	  	<isNotEmpty prepend="AND" property="user_name" >
+	            		muser.USER_NAME LIKE '%' ||#user_name#|| '%'
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="fst_bizplc_cd" >	            
+	    				FST_BIZPLC_CODE = #fst_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="scd_bizplc_cd" > 
+	            		SCD_BIZPLC_CODE= #scd_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="log_type" > 
+	            		LOG_TYPE= #log_type#
+	    			</isNotEmpty>
+	    			 <isNotEmpty prepend="AND" property="cont_startdate" > 
+	            		<![CDATA[
+	            		mlog.REG_DATE > to_date(#cont_startdate# ,'yyyymmddhh24miss')
+						]]>            		 
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="cont_enddate" >
+	            		<![CDATA[
+	            		mlog.REG_DATE < to_date(#cont_enddate#, 'yyyymmddhh24miss')
+	            	 	]]>
+	    			</isNotEmpty>
+	    		) ORDER BY REG_DATE DESC
+		) TB 
+		) WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+	</select>
+	<select id="LogHistory.getLogListTotCnt" parameterClass="box" resultClass="int">
+		  SELECT 
+				muser.REG_ID
+				,mlog.LOG_IDX  
+				,mlog.LOG_TYPE
+				,mlog.MAC_ADDRESS
+				,mlog.REMARKS
+				,TO_CHAR(mlog.REG_DATE , 'YYYY-MM-DD HH24-MM-SS') AS REG_DATE
+				,muser.BIZPLC_IDX
+				,muser.USER_NAME
+				,bizplc.FST_BIZPLC_NAME
+				,bizplc.SCD_BIZPLC_NAME
+				,bizplc.FST_BIZPLC_CODE
+				,bizplc.SCD_BIZPLC_CODE
+			 FROM
+				m_log_t mlog INNER JOIN
+				(SELECT MAX(LOG_IDX) LOG_IDX   FROM M_LOG_T
+  					GROUP BY reg_id ) AA
+				  	ON mlog.LOG_IDX = AA.LOG_IDX
+				INNER JOIN m_user_t muser   ON mlog.REG_ID = muser.REG_ID 
+				INNER JOIN m_bizplc_t bizplc ON muser.BIZPLC_IDX = bizplc.BIZPLC_IDX
+			    WHERE 1=1
+			     	<isNotEmpty prepend="AND" property="searchWrd" >
+	            		( muser.REG_ID LIKE '%' ||#searchWrd#|| '%'
+	            		OR muser.USER_NAME LIKE '%' ||#searchWrd#|| '%'
+	            		)
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="fst_bizplc_cd" >	            
+	    				FST_BIZPLC_CODE = #fst_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="scd_bizplc_cd" > 
+	            		SCD_BIZPLC_CODE= #scd_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="log_type" > 
+	            		LOG_TYPE= #log_type#
+	    			</isNotEmpty>
+	    			 <isNotEmpty prepend="AND" property="cont_startdate" > 
+	            		<![CDATA[
+	            		mlog.REG_DATE > to_date(#cont_startdate# ,'yyyymmddhh24miss')
+						]]>            		 
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="cont_enddate" >
+	            		<![CDATA[
+	            		mlog.REG_DATE < to_date(#cont_enddate#, 'yyyymmddhh24miss')
+	            	 	]]>
+	    			</isNotEmpty>
+			 )
+	</select>
+	<select id="LogHistory.getLogListAll" parameterClass="box" resultMap="LogHistory.getLogList">
+		SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+		   	 SELECT * FROM (
+			  SELECT 
+				DISTINCT muser.USER_ID
+				,mlog.LOG_IDX  
+				,mlog.LOG_TYPE
+				,mlog.MAC_ADDRESS
+				,mlog.REMARKS
+				,TO_CHAR(mlog.REG_DATE , 'YYYY-MM-DD HH24-MM-SS') AS REG_DATE
+				,muser.FST_BIZPLC_CD
+				,muser.SCD_BIZPLC_CD
+				,muser.USER_NAME
+				,bizplc.FST_BIZPLC_CD_NM
+				,bizplc.SCD_BIZPLC_CD_NM
+			 FROM
+				m_log_t mlog 
+				INNER JOIN m_user_t muser   ON mlog.REG_ID = muser.USER_ID 
+				INNER JOIN m_bizplc_t bizplc ON muser.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD
+					AND muser.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD
+			    WHERE 1=1
+			     	<isNotEmpty prepend="AND" property="searchWrd" >
+	            		( muser.USER_ID LIKE '%' ||#searchWrd#|| '%'
+	            		OR muser.USER_NAME LIKE '%' ||#searchWrd#|| '%'
+	            		)
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="fst_bizplc_cd" >	            
+	    				muser.FST_BIZPLC_CD = #fst_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="scd_bizplc_cd" > 
+	            		muser.SCD_BIZPLC_CD= #scd_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="log_type" > 
+	            		LOG_TYPE= #log_type#
+	    			</isNotEmpty>
+	    			 <isNotEmpty prepend="AND" property="cont_startdate" > 
+	            		<![CDATA[
+	            		mlog.REG_DATE > to_date(#cont_startdate# ,'yyyymmddhh24miss')
+						]]>            		 
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="cont_enddate" >
+	            		<![CDATA[
+	            		mlog.REG_DATE < to_date(#cont_enddate#, 'yyyymmddhh24miss')
+	            	 	]]>
+	    			</isNotEmpty>
+			 ) ORDER BY LOG_TYPE , FST_BIZPLC_CD , SCD_BIZPLC_CD,  USER_ID , REG_DATE DESC
+		) TB 
+		) WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+	</select>
+	<select id="LogHistory.getLogListTotCntAll" parameterClass="box" resultClass="int">
+		SELECT count(*) FROM ( SELECT rownum rn, TB.* FROM (
+		   	 SELECT * FROM (
+			  SELECT 
+				DISTINCT muser.USER_ID
+				,mlog.LOG_IDX  
+				,mlog.LOG_TYPE
+				,mlog.MAC_ADDRESS
+				,mlog.REMARKS
+				,TO_CHAR(mlog.REG_DATE , 'YYYY-MM-DD HH24-MM-SS') AS REG_DATE
+				,muser.FST_BIZPLC_CD
+				,muser.SCD_BIZPLC_CD
+				,muser.USER_NAME
+				,bizplc.FST_BIZPLC_CD_NM
+				,bizplc.SCD_BIZPLC_CD_NM
+			 FROM
+				m_log_t mlog 
+				INNER JOIN m_user_t muser   ON mlog.REG_ID = muser.USER_ID 
+				INNER JOIN m_bizplc_t bizplc ON muser.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD
+					AND muser.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD
+			    WHERE 1=1
+			     	<isNotEmpty prepend="AND" property="searchWrd" >
+	            		( muser.USER_ID LIKE '%' ||#searchWrd#|| '%'
+	            		OR muser.USER_NAME LIKE '%' ||#searchWrd#|| '%'
+	            		)
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="fst_bizplc_cd" >	            
+	    				muser.FST_BIZPLC_CD = #fst_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="scd_bizplc_cd" > 
+	            		muser.SCD_BIZPLC_CD= #scd_bizplc_cd#
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="log_type" > 
+	            		LOG_TYPE= #log_type#
+	    			</isNotEmpty>
+	    			 <isNotEmpty prepend="AND" property="cont_startdate" > 
+	            		<![CDATA[
+	            		mlog.REG_DATE > to_date(#cont_startdate# ,'yyyymmddhh24miss')
+						]]>            		 
+	    			</isNotEmpty>
+	    			<isNotEmpty prepend="AND" property="cont_enddate" >
+	            		<![CDATA[
+	            		mlog.REG_DATE < to_date(#cont_enddate#, 'yyyymmddhh24miss')
+	            	 	]]>
+	    			</isNotEmpty>
+			 ) ORDER BY LOG_TYPE , FST_BIZPLC_CD , SCD_BIZPLC_CD,  USER_ID , REG_DATE DESC
+		) TB 
+		)
+	</select>
+	<select id="LogHistory.getLogView" parameterClass="box" resultMap="LogHistory.getLogList">
+		SELECT
+			distinct
+		        muser.USER_ID     ,
+		        mlog.LOG_IDX       ,
+		        mlog.LOG_TYPE     ,
+		        mlog.MAC_ADDRESS     ,
+		        mlog.REMARKS     ,
+		        TO_CHAR(mlog.REG_DATE ,
+		        'YYYY-MM-DD HH24-MM-SS') AS REG_DATE     ,
+		        muser.FST_BIZPLC_CD     ,
+		        muser.SCD_BIZPLC_CD     ,
+		        muser.USER_NAME     ,
+		        bizplc.FST_BIZPLC_CD_NM     ,
+		        bizplc.SCD_BIZPLC_CD_NM     
+		    FROM
+		        m_log_t mlog      
+		    INNER JOIN
+		        m_user_t muser   
+		            ON mlog.REG_ID = muser.USER_ID      
+		    INNER JOIN
+		        m_bizplc_t bizplc 
+		            ON muser.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD
+		            AND muser.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD
+		    WHERE
+		        1=1        
+					    AND LOG_IDX = #log_idx#
+					  ORDER BY REG_DATE DESC
+	</select>
+
+</sqlMap>
+

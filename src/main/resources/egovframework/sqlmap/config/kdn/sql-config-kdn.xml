@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMapConfig PUBLIC "-//iBATIS.com//DTD SQL Map Config 2.0//EN"
+    "http://www.ibatis.com/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+	<sqlMap resource="egovframework/sqlmap/kdn/Login.xml"/><!-- 로그인 관리  -->		
+	<sqlMap resource="egovframework/sqlmap/kdn/api/KdnApi.xml"/><!-- Api  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/Board.xml"/><!-- [Admin] 공지사항 관리  -->	
+	<sqlMap resource="egovframework/sqlmap/kdn/Code.xml"/><!-- [Admin] 코드 관리  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/Eqp.xml"/><!-- [Admin] 시설물 관리  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/Admin.xml"/><!-- [Admin] 순시자 관리  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/Nfc.xml"/><!-- [Admin] NFC 관리  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/Traking.xml"/><!-- [Admin] 트래킹 관리  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/LogHistory.xml"/><!-- [Admin] 로그 관리  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/Menu.xml"/><!-- [Admin] 메뉴 관리  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/Auth.xml"/><!-- [Admin] 권한 관리  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/File.xml"/><!-- 파일 관리 -->
+	<sqlMap resource="egovframework/sqlmap/kdn/excel/ExcelUpload.xml"/><!-- [Kepco] 엑셀 파일 업로드 -->
+	<sqlMap resource="egovframework/sqlmap/kdn/InsResult.xml"/> <!--   [Admin] 순시결과  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/InsResultMant.xml"/><!-- [Admin] 시설물 점검 결과  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/MobileConfirm.xml"/><!-- [Admin] 모바일 승인  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/StatLog.xml"/><!-- [Admin] 모바일 승인  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/Chart.xml"/><!-- [Admin] 차트  -->
+	<sqlMap resource="egovframework/sqlmap/kdn/Version.xml"/><!-- [Admin] 모바일 버젼 -->
+	<sqlMap resource="egovframework/sqlmap/kdn/InsResultStat.xml"/><!-- [Admin] 시설물 점검 통계 -->
+	<sqlMap resource="egovframework/sqlmap/kdn/TLog.xml"/><!-- [Admin] 순시자 접속 로그표 -->
+	<sqlMap resource="egovframework/sqlmap/kdn/InsResultImsi.xml"/> <!--   [Admin] 순시결과 임시 -->
+</sqlMapConfig>

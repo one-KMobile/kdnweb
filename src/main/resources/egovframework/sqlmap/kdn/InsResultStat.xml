@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="InsResultStat">
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	<!-- [순시결과통계] 목록 조회 -->
+	<resultMap id="InsResultStat.getInsResultStatList"  class="box">
+		<result property="schedule_id" column="SCHEDULE_ID" nullValue=""/>
+		<result property="fst_bizplc_cd_nm" column="FST_BIZPLC_CD_NM" nullValue=""/>
+		<result property="scd_bizplc_cd_nm" column="SCD_BIZPLC_CD_NM" nullValue=""/>
+		<result property="fnct_lc_dtls" column="FNCT_LC_DTLS" nullValue=""/>
+		<result property="cycle_ym" column="CYCLE_YM" nullValue=""/>
+		<result property="ins_name" column="INS_NAME" nullValue=""/>
+		<result property="code_id" column="CODE_ID" nullValue=""/>
+		<result property="ins_count" column="INS_COUNT" nullValue=""/>
+		<result property="tower_count" column="TOWER_COUNT" nullValue=""/>
+	</resultMap>
+	
+	<select id="InsResultStat.getInsResultStatList" parameterClass="box" resultMap="InsResultStat.getInsResultStatList" >
+	SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+			SELECT 
+				*
+			FROM (	
+				SELECT DISTINCT SCHEDULE_ID, FST_BIZPLC_CD_NM, SCD_BIZPLC_CD_NM, FNCT_LC_DTLS, CYCLE_YM, INS_NAME, CODE_ID, COUNT(MASTER_IDX) INS_COUNT, TOWER_COUNT 
+				FROM (
+					SELECT AA.SCHEDULE_ID, AA.MASTER_IDX, AA.CYCLE_YM
+					, (SELECT DISTINCT EE.FST_BIZPLC_CD_NM FROM M_BIZPLC_T EE WHERE EE.FST_BIZPLC_CD = DD.FST_BIZPLC_CD AND EE.SCD_BIZPLC_CD = DD.SCD_BIZPLC_CD) FST_BIZPLC_CD_NM
+					, (SELECT DISTINCT EE.SCD_BIZPLC_CD_NM FROM M_BIZPLC_T EE WHERE EE.FST_BIZPLC_CD = DD.FST_BIZPLC_CD AND EE.SCD_BIZPLC_CD = DD.SCD_BIZPLC_CD) SCD_BIZPLC_CD_NM
+					, DD.FNCT_LC_DTLS
+					, FF.CODE_NAME INS_NAME
+					, FF.CODE_ID
+					, (SELECT COUNT(EQP_NO) FROM OP_EQP_HEADER_T EE WHERE EE.FNCT_LC_NO = AA.FNCT_LC_NO AND EE.EQP_TY_CD = 'T001') TOWER_COUNT
+					FROM M_RESULT_MASTER_T AA 
+					INNER JOIN OP_FUNCTION_HEADER_T DD ON AA.FNCT_LC_NO = DD.FNCT_LC_NO 
+					INNER JOIN M_CODE_T FF ON AA.INS_TYPE_CODE = FF.CODE_ID AND FF.GROUP_CODE_ID = 'INS_TYPE' 
+					WHERE 1=1
+					<isNotEmpty property="fst_bizplc_cd" prepend="AND"> 
+						DD.FST_BIZPLC_CD = trim(#fst_bizplc_cd#) 
+					</isNotEmpty>
+					<isNotEmpty property="scd_bizplc_cd" prepend="AND">
+						DD.SCD_BIZPLC_CD = trim(#scd_bizplc_cd#) 
+					</isNotEmpty>
+					<isNotEmpty property="fnct_lc_no" prepend="AND">
+						DD.FNCT_LC_NO = trim(#fnct_lc_no#) 
+					</isNotEmpty>
+					<isNotEmpty property="cycle_ym" prepend="AND">
+						AA.CYCLE_YM = trim(#cycle_ym#)
+					</isNotEmpty>
+				) TOTAL 
+				GROUP BY SCHEDULE_ID, FST_BIZPLC_CD_NM, SCD_BIZPLC_CD_NM, FNCT_LC_DTLS, CYCLE_YM, INS_NAME, CODE_ID, TOWER_COUNT
+				ORDER BY CODE_ID DESC
+			)	
+        ) TB ) 
+	</select>
+	
+	<!-- [순시결과 통계] 목록 카운트 조회 -->
+	<select id="InsResultStat.getInsResultStatListTotCnt" parameterClass="box" resultClass="int">
+		SELECT 
+			COUNT(*) totcnt
+			FROM(
+				SELECT * 	
+				FROM (
+					SELECT AA.SCHEDULE_ID, AA.MASTER_IDX, AA.CYCLE_YM
+					, (SELECT DISTINCT EE.FST_BIZPLC_CD_NM FROM M_BIZPLC_T EE WHERE EE.FST_BIZPLC_CD = DD.FST_BIZPLC_CD AND EE.SCD_BIZPLC_CD = DD.SCD_BIZPLC_CD) FST_BIZPLC_CD_NM
+					, (SELECT DISTINCT EE.SCD_BIZPLC_CD_NM FROM M_BIZPLC_T EE WHERE EE.FST_BIZPLC_CD = DD.FST_BIZPLC_CD AND EE.SCD_BIZPLC_CD = DD.SCD_BIZPLC_CD) SCD_BIZPLC_CD_NM
+					, DD.FNCT_LC_DTLS
+					, FF.CODE_NAME INS_NAME
+					, FF.CODE_ID
+					, (SELECT COUNT(EQP_NO) FROM OP_EQP_HEADER_T EE WHERE EE.FNCT_LC_NO = AA.FNCT_LC_NO AND EE.EQP_TY_CD = 'T001') TOWER_COUNT
+					FROM M_RESULT_MASTER_T AA 
+					INNER JOIN OP_FUNCTION_HEADER_T DD ON AA.FNCT_LC_NO = DD.FNCT_LC_NO 
+					INNER JOIN M_CODE_T FF ON AA.INS_TYPE_CODE = FF.CODE_ID AND FF.GROUP_CODE_ID = 'INS_TYPE' 
+					WHERE 1=1
+					<isNotEmpty property="fst_bizplc_cd" prepend="AND"> 
+						DD.FST_BIZPLC_CD = trim(#fst_bizplc_cd#) 
+					</isNotEmpty>
+					<isNotEmpty property="scd_bizplc_cd" prepend="AND">
+						DD.SCD_BIZPLC_CD = trim(#scd_bizplc_cd#) 
+					</isNotEmpty>
+					<isNotEmpty property="fnct_lc_no" prepend="AND">
+						DD.FNCT_LC_NO = trim(#fnct_lc_no#) 
+					</isNotEmpty>
+					<isNotEmpty property="cycle_ym" prepend="AND">
+						AA.CYCLE_YM = trim(#cycle_ym#)
+					</isNotEmpty>
+				) TOTAL 
+				GROUP BY SCHEDULE_ID, FST_BIZPLC_CD_NM, SCD_BIZPLC_CD_NM, FNCT_LC_DTLS, CYCLE_YM, INS_NAME, CODE_ID, TOWER_COUNT
+			)
+	</select>
+</sqlMap>

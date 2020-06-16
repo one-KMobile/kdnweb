@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap namespace="Board">
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	<resultMap id="Result.getNoticeList"  class="box">
+		<result property="board_idx" column="BOARD_IDX" nullValue=""/>
+		<result property="board_type_code" column="BOARD_TYPE_CODE" nullValue=""/>
+		<result property="category_code" column="CATEGORY_CODE" nullValue=""/>
+		<result property="top_yn" column="TOP_YN" nullValue=""/>
+		<result property="board_title" column="BOARD_TITLE" nullValue=""/>
+		<result property="board_cont" column="BOARD_CONT" nullValue=""/>
+		<result property="send_name" column="SEND_NAME" nullValue=""/>
+		<result property="send_date" column="SEND_DATE" nullValue=""/>
+		<result property="push_cont" column="PUSH_CONT" nullValue=""/>
+		<result property="use_yn" column="USE_YN" nullValue=""/>
+		<result property="fst_bizplc_cd" column="FST_BIZPLC_CD" nullValue=""/>
+		<result property="scd_bizplc_cd" column="SCD_BIZPLC_CD" nullValue=""/>
+		<result column="FST_BIZPLC_CD_NM" property="fst_bizplc_cd_nm"/>
+		<result column="SCD_BIZPLC_CD_NM" property="scd_bizplc_cd_nm" nullValue=""/>
+		<result property="code_name" column="CODE_NAME" nullValue=""/>
+	</resultMap>
+	
+	<!-- [공지] 목록 조회 -->
+	<select id="Board.getNoticeList" parameterClass="box" resultMap="Result.getNoticeList" >
+		SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+					SELECT 
+					 DISTINCT 
+						BOARD_IDX       
+					  ,BOARD_TYPE_CODE
+					  ,(SELECT CODE_NAME FROM M_CODE_T  WHERE CODE_ID = CATEGORY_CODE) AS CODE_NAME
+					  ,CATEGORY_CODE    
+					  ,TOP_YN           
+					  ,BOARD_TITLE    
+					  ,BOARD_CONT    
+					  ,SEND_NAME      
+					  ,SEND_DATE
+					  ,PUSH_CONT 
+					  ,board.USE_YN     
+					  ,board.FST_BIZPLC_CD
+					  ,board.SCD_BIZPLC_CD
+					  ,bizplc.FST_BIZPLC_CD_NM 
+					  ,bizplc.SCD_BIZPLC_CD_NM
+		  	FROM M_BOARD_T board
+		  	LEFT JOIN m_bizplc_t bizplc         
+            ON board.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD     
+            AND board.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD     
+		  	WHERE 1=1
+		  	<isNotEmpty prepend="AND" property="s_category_code" >	
+	  			CATEGORY_CODE = #s_category_code#
+	  		</isNotEmpty>
+		  	<isNotEmpty prepend="AND" property="searchWrd" >
+	            BOARD_TITLE LIKE '%' ||#searchWrd#|| '%'
+	        </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="fst_bizplc_cd" >
+	            board.FST_BIZPLC_CD = #fst_bizplc_cd#
+	        </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="scd_bizplc_cd" >
+	            board.SCD_BIZPLC_CD = #scd_bizplc_cd#
+	        </isNotEmpty>
+        	AND TOP_YN != 'Y'
+	        ORDER BY BOARD_IDX DESC
+        ) TB ) WHERE rn BETWEEN #firstIndex# + 1 AND #firstIndex# + #recordCountPerPage#
+	</select>	
+	
+	<!-- [공지] 목록 카운트 조회 -->
+	<select id="Board.getNoticeListTotCnt" parameterClass="box" resultClass="int">
+			SELECT 
+				COUNT(*) totCnt
+			FROM M_BOARD_T
+			WHERE 1=1
+			<isNotEmpty prepend="AND" property="s_category_code" >	
+	  			CATEGORY_CODE = #s_category_code#
+	  		</isNotEmpty>
+		  	<isNotEmpty prepend="AND" property="searchWrd" >
+	            BOARD_TITLE LIKE '%' ||#searchWrd#|| '%'
+	        </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="fst_bizplc_cd" >
+	            FST_BIZPLC_CD = #fst_bizplc_cd#
+	        </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="scd_bizplc_cd" >
+	            SCD_BIZPLC_CD = #scd_bizplc_cd#
+	        </isNotEmpty>
+	        AND TOP_YN != 'Y'
+	</select>
+	
+	<!-- [공지] Top 목록 조회 -->
+	<select id="Board.getTopNoticeList" parameterClass="box" resultMap="Result.getNoticeList" >
+		SELECT 
+				DISTINCT
+					   BOARD_IDX       
+					  ,BOARD_TYPE_CODE
+					  ,(SELECT CODE_NAME FROM M_CODE_T CODE WHERE code.CODE_ID = board.CATEGORY_CODE) AS CODE_NAME
+					  ,CATEGORY_CODE    
+					  ,TOP_YN           
+					  ,BOARD_TITLE    
+					  ,BOARD_CONT    
+					  ,SEND_NAME      
+					  ,SEND_DATE
+					  ,PUSH_CONT 
+					  ,board.USE_YN     
+					  ,board.FST_BIZPLC_CD
+					  ,board.SCD_BIZPLC_CD
+					  ,bizplc.FST_BIZPLC_CD_NM 
+					  ,bizplc.SCD_BIZPLC_CD_NM
+		  	FROM M_BOARD_T board
+		  	LEFT JOIN m_bizplc_t bizplc         
+            ON board.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD     
+            AND board.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD    
+		  	WHERE 1=1
+		  	AND TOP_YN = 'Y'
+	        ORDER BY BOARD_IDX DESC
+	</select>	
+	
+	<resultMap id="Result.getNoticeView" class="box">
+		<result property="board_idx" column="BOARD_IDX" nullValue=""/>
+		<result property="board_type_code" column="BOARD_TYPE_CODE" nullValue=""/>
+		<result property="category_code" column="CATEGORY_CODE" nullValue=""/>
+		<result property="category_code_name" column="CATEGORY_CODE_NAME" nullValue=""/>
+		<result property="top_yn" column="TOP_YN" nullValue=""/>
+		<result property="board_title" column="BOARD_TITLE" nullValue=""/>
+		<!-- <result property="board_cont" column="BOARD_CONT" nullValue="" jdbcType="CLOB" typeHandler="egovframework.com.cmm.AltibaseClobStringTypeHandler"/> -->
+		<result property="board_cont" column="BOARD_CONT" nullValue="" />
+		<result property="send_name" column="SEND_NAME" nullValue=""/>
+		<result property="send_date" column="SEND_DATE" nullValue=""/>
+		<result property="send_date_string" column="SEND_DATE_STRING" nullValue=""/>
+		<result property="push_cont" column="PUSH_CONT" nullValue=""/>
+		<result property="push_yn" column="PUSH_YN" nullValue=""/>
+		<result property="reg_date" column="REG_DATE" nullValue=""/>
+		<result property="reg_id" column="REG_ID" nullValue=""/>
+		<result property="upd_date" column="UPD_DATE" nullValue=""/>
+		<result property="upd_id" column="UPD_ID" nullValue=""/>
+		<result property="use_yn" column="USE_YN" nullValue=""/>
+		<result property="fst_bizplc_cd" column="FST_BIZPLC_CD"/>
+		<result property="scd_bizplc_cd" column="SCD_BIZPLC_CD"/>
+		<result column="FST_BIZPLC_CD_NM" property="fst_bizplc_nm"/>
+		<result column="SCD_BIZPLC_CD_NM" property="scd_bizplc_nm"/>
+	</resultMap>
+	
+	<!-- [공지] 정보 조회  -->
+	<select id="Board.getNoticeView" parameterClass="box" resultMap="Result.getNoticeView" >
+		 SELECT
+		        DISTINCT BOARD_IDX ,
+		        BOARD_TYPE_CODE ,
+		        CATEGORY_CODE ,
+		        (SELECT   CODE_NAME  FROM    M_CODE_T   WHERE   CODE_ID = CATEGORY_CODE) AS CATEGORY_CODE_NAME ,
+		        TOP_YN ,
+		        BOARD_TITLE ,
+		        BOARD_CONT ,
+		        SEND_NAME ,
+		        SEND_DATE ,
+		        TO_CHAR(SEND_DATE ,
+		        'YYYY-MM-DD') AS SEND_DATE_STRING ,
+		        PUSH_CONT ,
+		        PUSH_YN ,
+		        board.REG_DATE ,
+		        REG_ID ,
+		        board.UPD_DATE ,
+		        UPD_ID ,
+		        board.USE_YN ,
+		        board.FST_BIZPLC_CD ,
+		        board.SCD_BIZPLC_CD ,
+		        bizplc.FST_BIZPLC_CD_NM ,
+		        bizplc.SCD_BIZPLC_CD_NM 
+		    FROM
+		        M_BOARD_T board 
+		    LEFT JOIN
+		        m_bizplc_t bizplc         
+		            ON board.FST_BIZPLC_CD = bizplc.FST_BIZPLC_CD     
+		            AND board.SCD_BIZPLC_CD = bizplc.SCD_BIZPLC_CD   
+		    WHERE board.BOARD_IDX =  #board_idx#
+	</select>
+	
+	<!-- [공지] 등록 저장  -->
+	<!-- ,#board_cont:CLOB# -->
+	<insert id="Board.kdnNoticeSave" parameterClass="box">
+		<![CDATA[
+				INSERT INTO M_BOARD_T ( 
+						BOARD_IDX       
+						,BOARD_TYPE_CODE 
+						,CATEGORY_CODE    
+						,TOP_YN           
+						,BOARD_TITLE    
+						,BOARD_CONT    
+						,SEND_NAME      
+						,SEND_DATE
+						,PUSH_CONT     
+						,PUSH_YN
+						,REG_DATE
+						,REG_ID    
+						,USE_YN
+						,FST_BIZPLC_CD
+						,SCD_BIZPLC_CD
+				 )VALUES ( 
+						SEQ_M_BOARD_T.NEXTVAL
+						,'BOARD_001'
+						,#category_code#
+						,NVL(#top_yn#,'N')
+						,#board_title#
+						,#board_cont#
+						,#send_name#      
+						,SYSDATE
+						,#push_cont#
+						,NVL(#push_yn#,'N') 
+						,SYSDATE
+						,#reg_id#  
+						,#use_yn#
+						,#fst_bizplc_cd#
+						,#scd_bizplc_cd#
+				  )
+			]]>
+	</insert>
+	
+	<!-- [공지] 수정  -->
+	<update id="Board.noticeUpdate" parameterClass="box">
+		<![CDATA[
+				UPDATE M_BOARD_T SET
+						CATEGORY_CODE = #category_code#
+						,SEND_DATE =  SYSDATE
+						,SEND_NAME = #send_name#
+						,PUSH_CONT = #push_cont#
+						,TOP_YN = NVL(#top_yn#,'N')
+						,PUSH_YN = NVL(#push_yn#,'N')
+						,BOARD_TITLE = #board_title#
+						,BOARD_CONT = #board_cont#
+						,UPD_DATE = SYSDATE
+						,UPD_ID = #upd_id#
+						,USE_YN = #use_yn#
+						,FST_BIZPLC_CD = #fst_bizplc_cd#
+						,SCD_BIZPLC_CD = #scd_bizplc_cd#
+				WHERE BOARD_IDX = #board_idx#
+			]]>
+	</update>
+	
+	<!-- [공지] 삭제  -->
+	<delete id="Board.noticeDelete" parameterClass="box">
+			DELETE FROM M_BOARD_T
+			WHERE BOARD_IDX IN (<iterate property="chk" conjunction=",">#chk[]#</iterate>)	 
+ 	</delete>
+ 	
+ 	<!-- [공지] Max 값 가져오기-->
+	<select id="Board.getMaxBoardIdx" parameterClass="box" resultClass="int">
+		SELECT MAX(board_idx) maxBoardIdx FROM M_BOARD_T 
+	</select>
+</sqlMap>

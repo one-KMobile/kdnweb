@@ -1,0 +1,1506 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="KdnApi">
+	
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	
+	<!-- 공지사항 리스트 -->
+	<select id="KdnApiDAO.getApiNoticeList" parameterClass="box" resultClass="box">
+			SELECT 
+				  BT.BOARD_IDX
+				  ,BT.BOARD_TITLE 
+				  ,(SELECT CODE_NAME FROM M_CODE_T CT WHERE GROUP_CODE_ID = 'NOTICETYPE' AND CT.CODE_ID = BT.CATEGORY_CODE) AS  CATEGORY_NAME
+				  ,BT.TOP_YN           
+				  ,BT.SEND_NAME      
+				  ,BT.SEND_DATE
+				  ,BT.USE_YN     	
+				  ,BT.BOARD_CONT
+				  ,BT.CATEGORY_CODE
+		  	FROM M_BOARD_T BT
+		  	WHERE 1=1
+		  	AND USE_YN = 'Y'  
+		  	<isNotEmpty prepend="AND" property="notice_cago_cd" >	
+	  			CATEGORY_CODE = trim(#notice_cago_cd#)
+	  		</isNotEmpty>
+	        ORDER BY BT.BOARD_IDX DESC
+	</select>
+	
+	<!-- 공지사항 상세 정보 -->
+	<select id="KdnApiDAO.getApiNoticeView" parameterClass="box" resultClass="box">
+			SELECT 
+				  BOARD_IDX
+				  ,BOARD_TITLE
+				  ,SEND_NAME      
+				  ,SEND_DATE
+     			  ,BOARD_CONT	
+		  	FROM M_BOARD_T
+		  	WHERE BOARD_IDX = #board_idx#
+	</select>
+	
+	<!-- 코드 정보 리스트 -->
+	<select id="KdnApiDAO.getApiCodeInfoList" parameterClass="box" resultClass="box">
+			SELECT
+				GCD.GROUP_CODE_ID 
+				,GCD.GROUP_CODE_NAME
+<!-- 			    ,CD.CODE_IDX -->
+			    ,CD.CODE_ID        
+			    ,CD.CODE_NAME 
+			FROM M_CODE_T CD      
+		  	INNER JOIN M_GROUP_CODE_T GCD
+<!-- 			    ON CD.GROUP_CODE_IDX = GCD.GROUP_CODE_IDX AND GCD.USE_YN = 'Y' -->
+ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y' 
+			WHERE 1=1
+			AND CD.USE_YN = 'Y'
+		  	<isNotEmpty property="group_code_id" >
+			    AND GCD.GROUP_CODE_ID = #group_code_id# 
+		    </isNotEmpty>
+	        ORDER BY GCD.GROUP_CODE_ID, CD.CODE_ID
+	</select>
+	
+	<!-- 순시결과 리스트	 -->
+	<select id="inspectionResult.getApiSearchInspectionResult" parameterClass="box" resultClass="box">
+		SELECT 
+				tracks.tracks_name
+				,bizplc.bizplc_idx
+				,master.ins_type_code
+				,master.ins_date
+				,master.latitude
+				,master.longitude
+				,bizplc.fst_bizplc_name
+				,bizplc.scd_bizplc_name 
+				,tower.trans_tower_idx
+		FROM m_result_master_t master INNER JOIN op_function_header_t tracks ON master.tracks_idx = tracks.tracks_idx 
+				INNER JOIN 	m_bizplc_t bizplc ON master.bizplc_idx = bizplc.bizplc_idx
+				INNER JOIN op_eqp_header_t tower ON bizplc.bizplc_idx = tower.bizplc_idx
+		WHERE bizplc.fst_bizplc_code = #fst_bizplc_code#
+		AND bizplc.scd_bizplc_code = #scd_bizplc_code#
+		<isNotEmpty prepend="AND" property="tracks_name">
+			trim(tracks.tracks_name) = trim(#tracks_name#)
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="ins_date">
+			substr(master.ins_date,0,5) = #ins_date#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="ins_type_code">
+			master.ins_type_code = #ins_type_code#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="date_status">
+			 (master.ins_date &gt;= #start_ins_date# OR master.ins_date &lt;= #end_ins_date#)
+		</isNotEmpty>
+	</select>
+
+<!-- 군포사업소 사업소 코드 가져오기 (확인용)	 -->
+	<select id="schedule.getBizcode" parameterClass="box" resultClass="box">
+		SELECT fnct_lc_no
+					, fst_bizplc_cd
+					, scd_bizplc_cd 
+		FROM op_function_header_t
+		WHERE fnct_lc_ty = 'FL05'
+        AND fnct_lc_sttus = 'I'
+		AND fnct_lc_dtls LIKE '%' || '군포' || '%'
+		
+	</select>
+
+<!-- 군포사업소 순시 선로 목록 확인 (원래는 9140 / 020 인데 데이터가 없어서 9110 / 010 으로 작업)	 -->
+	<select id="schedule.getTracksList" parameterClass="box" resultClass="box">
+		SELECT fnct_lc_no 
+					, fnct_lc_dtls 
+		FROM op_function_header_t
+		WHERE fnct_lc_ty = 'FL05'
+        AND fnct_lc_sttus = 'I'
+		AND fst_bizplc_cd = #fst_bizplc_cd# 
+		AND scd_bizplc_cd = #scd_bizplc_cd#
+		AND fnct_lc_dtls &lt;&gt; 'test'
+		ORDER BY fnct_lc_dtls
+	</select>
+	
+	<select id="schedule.getSelectedTracks" parameterClass="box" resultClass="box">
+		SELECT fnct_lc_dtls
+		FROM op_function_header_t
+		WHERE fnct_lc_no = #fnct_lc_no#
+	</select>
+<!-- 3.선로의 스케줄 가져오기 >> 순시종류별	 -->
+	<select id="schedule.getTracksInSchedule" parameterClass="box" resultClass="box"> 
+		<!-- SELECT * FROM (
+							SELECT INS_PLAN_NO
+									, ROW_NUMBER() OVER(ORDER BY FNCT_LC_NO) LINENUM
+									, TOWER_IDX
+									, CYCLE_YM
+									, INS_SN
+									, FNCT_LC_NO
+									, FNCT_LC_DTLS
+									, INS_TY_CD
+									, NM, EQP_NO
+									, EQP_NM
+									, LATITUDE
+									, LONGITUDE 
+									, UNITY_INS_NO
+									, ADDRESS
+							FROM ( SELECT INSPLAN.INS_PLAN_NO
+												, INSPLAN.CYCLE_YM
+												, INSPLAN.INS_SN
+												, INSPLAN.INS_TY_CD
+												, INSPLAN.NM
+												, INSPLAN.UNITY_INS_NO
+							    				,TRACKS.FNCT_LC_NO
+							    				, TRACKS.FNCT_LC_DTLS
+							    				,TOWER.EQP_NO
+							    				, TOWER.EQP_NM
+							    				, (SELECT oei.chartr_value FROM op_eqp_item_t oei WHERE oei.eqp_no = tower.eqp_no AND oei.chartr_cd = 'PM-A-0002') AS TOWER_IDX
+							    				, TOWER.LATITUDE
+							    				, TOWER.LONGITUDE   
+							    				, TOWER.ADDRESS 
+									  FROM (SELECT AA.INS_PLAN_NO
+									  					, BB.CYCLE_YM
+									  					, BB.INS_TY_CD
+									  					, BB.FNCT_EQP_NO AS FNCT_LC_NO
+									  					, BB.INS_SN
+									  					, BB.UNITY_INS_NO
+									  					, REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(DD.CODE_NAME,'항공장애등등구확인점검','장애등등구'),'항공장애등점검','장애등'),'전선접속개소점검','전선접속개소'),'접지저항측정','접지저항'),'불량애자검출','불량애자') NM
+											    FROM CO_INSPLAN_T AA INNER JOIN CO_INSPLAN_EQP_T BB ON AA.INS_PLAN_NO = BB.INS_PLAN_NO      
+											    AND BB.EQP_TY_CD = 'T001'
+											    AND BB.CYCLE_YM BETWEEN #start_date# AND #end_date# 
+											    INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TYPE' AND DD.CODE_ID = BB.INS_TY_CD 
+											    WHERE AA.INS_PLAN_NO IN (SELECT MAX(INS_PLAN_NO) 
+											    										FROM CO_INSPLAN_T CC 
+											      										WHERE AA.INS_PLAN_NO = CC.INS_PLAN_NO 
+											      										AND CC.FST_BIZPLC_CD =  #fst_bizplc_cd#
+											      										AND AA.SCD_BIZPLC_CD =  #scd_bizplc_cd#
+																						) 
+							    
+												UNION 
+							    
+							   				 	SELECT AA.INS_PLAN_NO
+							   				 				, BB.CYCLE_YM
+							   				 				, BB.INS_TY_CD
+							   				 				, BB.FNCT_EQP_NO AS FNCT_LC_NO
+							   				 				, BB.INS_SN
+							   				 				, BB.UNITY_INS_NO
+							   				 				, REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(DD.CODE_NAME,'항공장애등등구확인점검','장애등등구'),'항공장애등점검','장애등'),'전선접속개소점검','전선접속개소'),'접지저항측정','접지저항'),'불량애자검출','불량애자') NM
+							    				FROM CO_INSPLAN_T AA INNER JOIN CO_INSPLAN_EQP_T BB ON AA.INS_PLAN_NO = BB.INS_PLAN_NO      
+							    				AND BB.EQP_TY_CD = 'T001'
+							    				AND BB.CYCLE_YM BETWEEN #start_date# AND #end_date# 
+							    				INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TYPE' AND DD.CODE_ID = BB.INS_TY_CD 
+							    				WHERE AA.INS_PLAN_NO IN ( SELECT MAX(INS_PLAN_NO) 
+							    														FROM CO_INSPLAN_T CC 
+							      														WHERE AA.INS_PLAN_NO = CC.INS_PLAN_NO 
+							      														AND CC.FST_BIZPLC_CD =  #fst_bizplc_cd#
+							      														AND CC.SCD_BIZPLC_CD =  #scd_bizplc_cd#
+							    														) 
+							    				AND EXISTS (SELECT CC.FNCT_LC_NO 
+							    								FROM OP_FUNCTION_ITEM_T CC 
+							    								WHERE BB.FNCT_EQP_NO = CC.FNCT_LC_NO 
+							    								AND CC.CHARTR_CD = 'PM-A-0066'
+							    								)
+							  					) INSPLAN INNER JOIN op_function_header_t TRACKS ON INSPLAN.FNCT_LC_NO = TRACKS.FNCT_LC_NO  
+							  						INNER JOIN op_eqp_header_t TOWER ON TRACKS.FNCT_LC_NO = TOWER.FNCT_LC_NO 
+							  						AND TOWER.EQP_TY_CD = 'T001' 
+							  						AND TOWER.FST_BIZPLC_CD =  #fst_bizplc_cd#
+							  						AND TOWER.SCD_BIZPLC_CD =  #scd_bizplc_cd#
+									) TT
+								WHERE eqp_no is not null
+							<isNotEmpty property="fnct_lc_no">		
+								AND fnct_lc_no = #fnct_lc_no#
+							</isNotEmpty>
+							<isNotEmpty property="eqp_nm">
+								AND tower_idx = $eqp_nm$
+							</isNotEmpty>
+							<isNotEmpty property="ins_ty_cd">
+								AND ins_ty_cd = #ins_ty_cd#
+							</isNotEmpty>
+							ORDER BY FNCT_LC_NO, CYCLE_YM, TO_NUMBER(TOWER_IDX), INS_TY_CD
+				)page 
+				<isNotEmpty property="offset">
+					WHERE page.linenum BETWEEN #offset# AND #limit#
+				</isNotEmpty> -->
+
+                SELECT * FROM (
+                            SELECT INS_PLAN_NO
+                                    , ROW_NUMBER() OVER(ORDER BY FNCT_LC_NO) LINENUM
+                                    , TOWER_IDX
+                                    , CYCLE_YM
+                                    , INS_SN
+                                    , FNCT_LC_NO
+                                    , FNCT_LC_DTLS
+                                    , INS_TY_CD
+                                    , INS_TY_CD_COUNT <!-- 항공등 개수 -->
+                                    , NM, EQP_NO
+                                    , EQP_NM
+                                    , LATITUDE
+                                    , LONGITUDE 
+                                    , UNITY_INS_NO
+                                    , ADDRESS 
+                            FROM ( SELECT INSPLAN.INS_PLAN_NO
+                                                , INSPLAN.CYCLE_YM
+                                                , INSPLAN.INS_SN
+                                                , INSPLAN.INS_TY_CD 
+                                                , CASE WHEN INSPLAN.INS_TY_CD = '024' OR INSPLAN.INS_TY_CD = '025' THEN 
+                                                    (SELECT COUNT(*) FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD IN ('PM-A-0102','PM-A-0103','PM-A-0104') AND OEI.CHARTR_VALUE > 0) 
+                                                ELSE 0 END INS_TY_CD_COUNT
+                                                , INSPLAN.NM
+                                                , INSPLAN.UNITY_INS_NO
+                                                ,TRACKS.FNCT_LC_NO
+                                                , TRACKS.FNCT_LC_DTLS
+                                                ,TOWER.EQP_NO
+                                                , TOWER.EQP_NM
+                                                , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0002') AS TOWER_IDX
+                                                , TOWER.LATITUDE
+                                                , TOWER.LONGITUDE   
+                                                , TOWER.ADDRESS 
+                                      FROM (SELECT AA.INS_PLAN_NO
+                                                          , BB.CYCLE_YM
+                                                          , BB.INS_TY_CD
+                                                          , BB.FNCT_EQP_NO AS FNCT_LC_NO
+                                                          , BB.INS_SN
+                                                          , BB.UNITY_INS_NO
+                                                          , REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(DD.CODE_NAME,'항공장애등등구확인점검','장애등등구'),'항공장애등점검','장애등'),'전선접속개소점검','전선접속개소'),'접지저항측정','접지저항'),'불량애자검출','불량애자') NM
+                                                FROM CO_INSPLAN_T AA INNER JOIN CO_INSPLAN_EQP_T BB ON AA.INS_PLAN_NO = BB.INS_PLAN_NO      
+                                                AND BB.EQP_TY_CD = 'T001'
+                                                AND BB.CYCLE_YM BETWEEN #start_date# AND #end_date# 
+                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TYPE' AND DD.CODE_ID = BB.INS_TY_CD 
+                                                WHERE AA.INS_PLAN_NO IN (SELECT MAX(INS_PLAN_NO) 
+                                                                                        FROM CO_INSPLAN_T CC 
+                                                                                          WHERE AA.INS_PLAN_NO = CC.INS_PLAN_NO 
+                                                                                          AND CC.FST_BIZPLC_CD =  #fst_bizplc_cd#
+                                                                                          AND AA.SCD_BIZPLC_CD =  #scd_bizplc_cd#
+                                                                                        ) 
+                                
+                                                UNION 
+                                
+                                                    SELECT AA.INS_PLAN_NO
+                                                                , BB.CYCLE_YM
+                                                                , BB.INS_TY_CD
+                                                                , BB.FNCT_EQP_NO AS FNCT_LC_NO
+                                                                , BB.INS_SN
+                                                                , BB.UNITY_INS_NO
+                                                                , REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(DD.CODE_NAME,'항공장애등등구확인점검','장애등등구'),'항공장애등점검','장애등'),'전선접속개소점검','전선접속개소'),'접지저항측정','접지저항'),'불량애자검출','불량애자
+') NM
+                                                FROM CO_INSPLAN_T AA INNER JOIN CO_INSPLAN_EQP_T BB ON AA.INS_PLAN_NO = BB.INS_PLAN_NO      
+                                                AND BB.EQP_TY_CD = 'T001'
+                                                AND BB.CYCLE_YM BETWEEN #start_date# AND #end_date# 
+                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TYPE' AND DD.CODE_ID = BB.INS_TY_CD 
+                                                WHERE AA.INS_PLAN_NO IN ( SELECT MAX(INS_PLAN_NO) 
+                                                                                        FROM CO_INSPLAN_T CC 
+                                                                                          WHERE AA.INS_PLAN_NO = CC.INS_PLAN_NO 
+                                                                                          AND CC.FST_BIZPLC_CD =  #fst_bizplc_cd#
+                                                                                          AND CC.SCD_BIZPLC_CD =  #scd_bizplc_cd#
+                                                                                        ) 
+                                                AND EXISTS (SELECT CC.FNCT_LC_NO 
+                                                                FROM OP_FUNCTION_ITEM_T CC 
+                                                                WHERE BB.FNCT_EQP_NO = CC.FNCT_LC_NO 
+                                                                AND CC.CHARTR_CD = 'PM-A-0066'
+                                                                )
+                                                  ) INSPLAN INNER JOIN op_function_header_t TRACKS ON INSPLAN.FNCT_LC_NO = TRACKS.FNCT_LC_NO  
+                                                      INNER JOIN op_eqp_header_t TOWER ON TRACKS.FNCT_LC_NO = TOWER.FNCT_LC_NO 
+                                                      AND TOWER.EQP_TY_CD = 'T001' 
+                                                      AND TOWER.FST_BIZPLC_CD =  #fst_bizplc_cd#
+                                                      AND TOWER.SCD_BIZPLC_CD =  #scd_bizplc_cd#
+                                    ) TT
+                                WHERE eqp_no is not null 
+                            ORDER BY FNCT_LC_NO, CYCLE_YM, TO_NUMBER(TOWER_IDX), INS_TY_CD
+                )page 
+	</select>
+	
+<!-- 회선 테이블 검색 	 -->
+	<select id="schedule.getCircuitList" parameterClass="box" resultClass="box">
+		SELECT * FROM m_circuit_t <!-- ORDER BY TO_NUMBER(tower_idx), fnct_lc_dtls, sn -->
+		<!-- SELECT EQP_NO
+				, EQP_NM
+				, FNCT_LC_NO
+				, FNCT_LC_DTLS
+				, TOWER_IDX
+				, 0 TTM_LOAD
+				, CONT_NUM
+				, SN 
+				, MAX(DECODE(SEQ,1,NEW_POWER_NO)) POWER_NO_C1
+				, MAX(DECODE(SEQ,2,NEW_POWER_NO)) POWER_NO_C2
+				, MAX(DECODE(SEQ,3,NEW_POWER_NO)) POWER_NO_C3 
+		FROM ( SELECT EQP_NO
+				, EQP_NM, FNCT_LC_NO
+				, FNCT_LC_DTLS
+				, TOWER_IDX
+				, CONT_NUM 
+				, CASE WHEN CONT_NUM = 'S' THEN 
+				    CASE WHEN CCCC.SN = 1 THEN 1 END 
+				  WHEN CONT_NUM = '2B' THEN 
+				    CASE WHEN CCCC.SN = 1 THEN 1 
+				    WHEN CCCC.SN = 2 THEN 2 END 
+				  WHEN CONT_NUM = '4B' THEN 
+				    CASE WHEN CCCC.SN = 1 THEN 1 
+				    WHEN CCCC.SN = 2 THEN 2     
+				    WHEN CCCC.SN = 3 THEN 3 END    
+				  WHEN CONT_NUM = '6B' THEN 
+				    CASE WHEN CCCC.SN = 1 THEN 1 
+				    WHEN CCCC.SN = 2 THEN 2     
+				    WHEN CCCC.SN = 3 THEN 3 
+				    WHEN CCCC.SN = 4 THEN 4 END        
+				  END SN
+				, ROW_NUMBER() OVER(PARTITION BY EQP_NO, EQP_NM, FNCT_LC_NO, FNCT_LC_DTLS, TOWER_IDX, CONT_NUM, CCCC.SN ORDER BY NEW_POWER_NO) SEQ
+				, NEW_POWER_NO 
+				FROM (SELECT EQP_NO
+						, EQP_NM, FNCT_LC_NO
+						, FNCT_LC_DTLS
+						, TOWER_IDX
+						, CASE WHEN CONT_NUM = 'B001' THEN 'S' WHEN CONT_NUM = 'B002' THEN '2B' WHEN CONT_NUM = 'B003' THEN '4B' WHEN CONT_NUM = 'B005' THEN '6B' ELSE 'ERROR' END CONT_NUM 
+								, SANG||'_'||POWER_NO NEW_POWER_NO 
+						, POWER_NO NEW_POWER_NO 
+						FROM ( SELECT TOWER.EQP_NO
+								, TOWER.EQP_NM
+								, TOWER_B.FNCT_LC_NO 회선코드
+		  						, TRACKS.FNCT_LC_DTLS
+		  						, TOWER_B.EQP_NO POWER_NO
+		  						, TOWER.TOWER_IDX 
+		  						, (SELECT DISTINCT CC.CHARTR_VALUE 
+		  							FROM OP_EQP_ITEM_T AA INNER JOIN OP_EQP_ITEM_T CC ON CC.EQP_NO = AA.EQP_NO 
+		  							AND CC.CHARTR_CD = 'PM-A-0021' 
+		  							AND CC.CHARTR_VALUE IS NOT NULL 
+		    						WHERE AA.CHARTR_VALUE = TOWER.EQP_NO) CONT_NUM
+		  							, (SELECT ITEM_C.CHARTR_VALUE FROM OP_EQP_ITEM_T ITEM_C WHERE ITEM_C.EQP_NO = TOWER_B.EQP_NO AND ITEM_C.CHARTR_CD = 'PM-A-0020') SANG  
+		  , (SELECT ITEM_C.CHARTR_VALUE FROM OP_EQP_ITEM_T ITEM_C WHERE ITEM_C.EQP_NO = TOWER_B.EQP_NO AND ITEM_C.CHARTR_CD = 'PM-A-0174') FORE_BACK    
+		  , (SELECT ITEM_C.CHARTR_VALUE FROM OP_EQP_ITEM_T ITEM_C WHERE ITEM_C.EQP_NO = TOWER_B.EQP_NO AND ITEM_C.CHARTR_CD = 'PM-A-0101') AL_POWER      
+		  							FROM OP_EQP_HEADER_T TOWER_B INNER JOIN OP_EQP_ITEM_T ITEM_B ON ITEM_B.EQP_NO = TOWER_B.EQP_NO 
+		  							AND ITEM_B.CHARTR_CD = 'PM-A-0062' INNER JOIN ( SELECT TOWER_A.EQP_NO
+		  																											, TOWER_A.EQP_NM
+		  																											, ITEM_A.CHARTR_VALUE TOWER_IDX
+		    																								FROM OP_EQP_HEADER_T TOWER_A INNER JOIN OP_EQP_ITEM_T ITEM_A ON TOWER_A.EQP_NO = ITEM_A.EQP_NO 
+		    																								AND ITEM_A.CHARTR_CD = 'PM-A-0002'
+																									        WHERE TOWER_A.FST_BIZPLC_CD = #fst_bizplc_cd#
+																										   	AND TOWER_A.SCD_BIZPLC_CD = #scd_bizplc_cd#
+																										    AND TOWER_A.EQP_TY_CD = 'T001' 
+																										    AND TOWER_A.EQP_STTUS = 'I' 
+																											) TOWER ON TOWER.EQP_NO = ITEM_B.CHARTR_VALUE INNER JOIN OP_FUNCTION_HEADER_T TRACKS ON TRACKS.FNCT_LC_NO = TOWER_B.FNCT_LC_NO 
+																												AND TRACKS.FNCT_LC_TY = 'FL06' 
+																												AND TRACKS.FNCT_LC_STTUS = 'I' 
+																												WHERE TOWER_B.EQP_TY_CD = 'T004' 
+																												AND TOWER_B.EQP_STTUS = 'I' 
+									) AAAA 
+						) BBBB INNER JOIN (
+												  SELECT 1 SN FROM DUAL
+												  UNION ALL
+												  SELECT 2 SN FROM DUAL
+												  UNION ALL
+												  SELECT 3 SN FROM DUAL
+												  UNION ALL
+												  SELECT 4 SN FROM DUAL
+												) CCCC ON 1 = 1 
+						) DDDD 
+						WHERE SN IS NOT NULL 
+						GROUP BY EQP_NO, EQP_NM, FNCT_LC_NO, FNCT_LC_DTLS, TOWER_IDX, CONT_NUM, SN 
+						ORDER BY TO_NUMBER(TOWER_IDX), FNCT_LC_DTLS, SN -->
+	</select>
+	
+<!-- 불량애자 검색 -->
+	<select id="schedule.getPoorInsulators" parameterClass="box" resultClass="box">
+		SELECT * FROM m_pi_t <!-- ORDER BY cl_nm, ty_secd, phs_secd -->  
+	<!-- SELECT CCCC.*
+			,  (SELECT CD.CODE_NAME FROM M_CODE_T CD WHERE CD.GROUP_CODE_ID = 'PHS_SECD' AND CD.CODE_ID = CCCC.PHS_SECD) PHS_SECD_NM
+			FROM (SELECT EQP_NO
+					          		, EQP_NM
+					          		, TOWER_IDX
+					          		, CASE WHEN INSBTY_LFT IS NOT NULL THEN '좌' END INSBTY_LFT
+					                , CASE WHEN INSBTY_RIT IS NOT NULL THEN '우' END INSBTY_RIT
+					                , (SELECT CL.FNCT_LC_NO FROM OP_FUNCTION_HEADER_T CL WHERE CL.FNCT_LC_TY = 'FL06' AND CL.FNCT_LC_STTUS = 'I' AND CL.FNCT_LC_DTLS = BBBB.CL_NM AND CL.FST_BIZPLC_CD = #fst_bizplc_cd# AND CL.SCD_BIZPLC_CD = #scd_bizplc_cd#) CL_NO 
+					                , CL_NM 
+					                , TY_SECD
+					                , CASE WHEN TY_SECD = 'B001' THEN '현수' WHEN TY_SECD = 'B002' THEN '전원' WHEN TY_SECD = 'B003' THEN '부하' WHEN TY_SECD = 'B004' THEN '지지' END TY_SECD_NM
+					                , PHS_SECD_NM
+					                , CASE WHEN PHS_SECD = 'C1' THEN 'A' WHEN PHS_SECD = 'C2' THEN 'B' WHEN PHS_SECD = 'C3' THEN 'C' END PHS_SECD 
+					                , INSR_EQP_NO
+					                , INSR_NM
+					                , INS_CNT
+					                , PROD_YMD
+					                , PROD_COMP
+					        FROM (SELECT AAAA.EQP_NO, AAAA.EQP_NM, AAAA.TOWER_IDX, ITEM_A.EQP_NO INSR_EQP_NO, TOWER_A.EQP_NM INSR_NM, ITEM_A.CHARTR_VALUE INS_CNT
+					                , (SELECT ITEM_D.CHARTR_VALUE FROM OP_EQP_ITEM_T ITEM_D WHERE ITEM_D.EQP_NO = ITEM_A.EQP_NO AND ITEM_D.CHARTR_CD = 'PM-A-0023') CL_NM  
+					                , (SELECT ITEM_D.CHARTR_VALUE FROM OP_EQP_ITEM_T ITEM_D WHERE ITEM_D.EQP_NO = ITEM_A.EQP_NO AND ITEM_D.CHARTR_CD = 'PM-A-0020') PHS_SECD  
+					                , (SELECT ITEM_D.CHARTR_VALUE FROM OP_EQP_ITEM_T ITEM_D WHERE ITEM_D.EQP_NO = ITEM_A.EQP_NO AND ITEM_D.CHARTR_CD = 'PM-A-0024') TY_SECD  
+					                , (SELECT ITEM_D.CHARTR_VALUE FROM OP_EQP_ITEM_T ITEM_D WHERE ITEM_D.EQP_NO = ITEM_A.EQP_NO AND ITEM_D.CHARTR_CD = 'PM-A-0158') INSBTY_LFT /*애자련형 - 좌*/ 
+					                , (SELECT ITEM_D.CHARTR_VALUE FROM OP_EQP_ITEM_T ITEM_D WHERE ITEM_D.EQP_NO = ITEM_A.EQP_NO AND ITEM_D.CHARTR_CD = 'PM-A-0159') INSBTY_RIT /*애자련형 - 우*/    
+					                , (SELECT ITEM_D.CHARTR_VALUE FROM OP_EQP_ITEM_T ITEM_D WHERE ITEM_D.EQP_NO = ITEM_A.EQP_NO AND ITEM_D.CHARTR_CD = 'PM-B-0034') PROD_YMD /*애자 제작년월*/ 
+					                , (SELECT ITEM_D.CHARTR_VALUE FROM OP_EQP_ITEM_T ITEM_D WHERE ITEM_D.EQP_NO = ITEM_A.EQP_NO AND ITEM_D.CHARTR_CD = 'PM-B-0035') PROD_COMP /*애자 제작업체*/                 
+					                FROM OP_EQP_HEADER_T TOWER_A INNER JOIN OP_EQP_ITEM_T ITEM_A ON TOWER_A.EQP_NO = ITEM_A.EQP_NO 
+					                AND ITEM_A.CHARTR_CD = 'PM-A-0031' INNER JOIN (SELECT TOWER_B.EQP_NO, TOWER_B.EQP_NM, ITEM_B.EQP_NO INS_NO, ITEM_C.CHARTR_VALUE TOWER_IDX
+					                                                                                        FROM OP_EQP_ITEM_T ITEM_B INNER JOIN OP_EQP_HEADER_T TOWER_B ON ITEM_B.CHARTR_VALUE = TOWER_B.EQP_NO 
+					                                                                                        AND TOWER_B.EQP_TY_CD = 'T001' 
+					                                                                                        AND TOWER_B.EQP_STTUS = 'I' INNER JOIN OP_EQP_ITEM_T ITEM_C ON ITEM_C.EQP_NO = TOWER_B.EQP_NO 
+					                                                                                        AND ITEM_C.CHARTR_CD = 'PM-A-0002'
+					                                                                                    ) AAAA ON ITEM_A.EQP_NO = AAAA.INS_NO    
+					                ) BBBB 
+					        ORDER BY CL_NM, TY_SECD, PHS_SECD  
+					        )CCCC -->
+	</select>
+	
+<!-- 항공장애 -->	
+	<select id="schedule.getErrorAir" parameterClass="box" resultClass="box">
+	<!-- SELECT * FROM m_al_t -->
+		<!-- SELECT TOWER.EQP_NO 
+		, (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0002') AS TOWER_IDX
+		, TOWER.FLIGHT_LMP_KND 
+		, (SELECT AA.CODE_NAME FROM M_CODE_T AA WHERE AA.CODE_ID = TOWER.FLIGHT_LMP_KND AND AA.GROUP_CODE_ID = 'FLIGHT_LMP_KND') FLIGHT_LMP_KND_NM 
+		, TOWER.SRCELCT_KND
+		, (SELECT AA.CODE_NAME FROM M_CODE_T AA WHERE AA.CODE_ID = TOWER.SRCELCT_KND AND AA.GROUP_CODE_ID = 'SRCELCT_KND') SRCELCT_KND_NM 
+		, TOWER.FLIGHT_LMP_NO
+		FROM OT_FLGT_LMP_RLT_T TOWER 
+		WHERE TOWER.EQP_NO IN (SELECT EQP_NO FROM OP_EQP_HEADER_T WHERE FST_BIZPLC_CD = #fst_bizplc_cd# AND SCD_BIZPLC_CD=#scd_bizplc_cd#) 
+		ORDER BY TOWER_IDX, TOWER.FLIGHT_LMP_KND, TOWER.FLIGHT_LMP_NO -->
+				
+		SELECT DD.EQP_NO
+		, DD.TOWER_IDX
+		, DD.FLIGHT_LMP_KND
+		, DD.FLIGHT_LMP_KND_NM 
+		, DD.SRCELCT_KND
+		, NVL(DD.SRCELCT_KND_NM,'교류전원식') SRCELCT_KND_NM 
+		, DD.FLIGHT_LMP_NO 
+		FROM (
+		  SELECT BB.* 
+		    , (SELECT CODE.CODE_NAME FROM M_CODE_T CODE WHERE CODE.CODE_ID = REPLACE(BB.SRCELCT_KND,'B','') AND CODE.GROUP_CODE_ID = 'SRCELCT_KND') SRCELCT_KND_NM 
+		    , CASE WHEN FLIGHT_LMP_COUNT = 1 THEN 
+		    CASE WHEN CC.SN = 1 THEN 1 END 
+		    WHEN FLIGHT_LMP_COUNT = 2 THEN 
+		    CASE WHEN CC.SN = 1 THEN 1 
+		    WHEN CC.SN = 2 THEN 2 END 
+		    WHEN FLIGHT_LMP_COUNT = 3 THEN 
+		    CASE WHEN CC.SN = 1 THEN 1 
+		    WHEN CC.SN = 2 THEN 2     
+		    WHEN CC.SN = 3 THEN 3 END    
+		    WHEN FLIGHT_LMP_COUNT = 4 THEN 
+		    CASE WHEN CC.SN = 1 THEN 1 
+		    WHEN CC.SN = 2 THEN 2     
+		    WHEN CC.SN = 3 THEN 3 
+		    WHEN CC.SN = 4 THEN 4 END        
+		    END FLIGHT_LMP_NO 
+		  FROM (
+		      SELECT AA.*
+		      FROM (     
+		        SELECT TOWER.EQP_NO 
+		        , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0002') AS TOWER_IDX 
+		        , '001' FLIGHT_LMP_KND <!-- 고광도 코드 --> 
+		        , '고광도' FLIGHT_LMP_KND_NM <!-- 항공등종류 : 고광도 -->       
+		        , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0102')  FLIGHT_LMP_COUNT <!-- 고광도 수 --> 
+		        , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0101') SRCELCT_KND <!-- 전원 종류 코드 --> 
+		        FROM OP_EQP_HEADER_T TOWER 
+		        INNER JOIN OP_FUNCTION_HEADER_T TRACKS ON TRACKS.FNCT_LC_NO = TOWER.FNCT_LC_NO 
+		        AND TRACKS.FNCT_LC_TY = 'FL05' <!-- 가공선로 : FL05 -->
+		        AND TRACKS.FNCT_LC_STTUS = 'I'     
+		        WHERE TOWER.EQP_TY_CD = 'T001'    
+		        AND TOWER.EQP_STTUS = 'I'   
+		        AND TOWER.FNCT_LC_NO IN ($fnct_lc_no$)
+		      ) AA 
+		      WHERE AA.FLIGHT_LMP_COUNT &lt;&gt; 0 
+		      
+		      UNION 
+		      
+		      SELECT AA.*
+		      FROM (     
+		        SELECT TOWER.EQP_NO 
+		        , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0002') AS TOWER_IDX 
+		        , '002' FLIGHT_LMP_KND <!-- 중광도 코드 --> 
+		        , '중광도' FLIGHT_LMP_KND_NM <!-- 항공등종류 : 중광도 -->       
+		        , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0103') FLIGHT_LMP_COUNT <!-- 중광도 수  -->
+		        , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0101') SRCELCT_KND <!-- 전원 종류 코드  -->
+		        FROM OP_EQP_HEADER_T TOWER 
+		        INNER JOIN OP_FUNCTION_HEADER_T TRACKS ON TRACKS.FNCT_LC_NO = TOWER.FNCT_LC_NO 
+		        AND TRACKS.FNCT_LC_TY = 'FL05' 
+		        AND TRACKS.FNCT_LC_STTUS = 'I'     
+		        WHERE TOWER.EQP_TY_CD = 'T001'    
+		        AND TOWER.EQP_STTUS = 'I'   
+		        AND TOWER.FNCT_LC_NO IN ($fnct_lc_no$)
+		      ) AA 
+		      WHERE AA.FLIGHT_LMP_COUNT &lt;&gt; 0 
+		      
+		      UNION 
+		      
+		      SELECT AA.*
+		      FROM (     
+		        SELECT TOWER.EQP_NO 
+		        , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0002') AS TOWER_IDX 
+		        , '003' FLIGHT_LMP_KND <!-- 저광도 코드 --> 
+		        , '저광도' FLIGHT_LMP_KND_NM <!-- 항공등종류 : 저광도 -->       
+		        , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0104') FLIGHT_LMP_COUNT <!-- 저광도 수 --> 
+		        , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0101') SRCELCT_KND <!-- 전원 종류 코드  -->
+		        FROM OP_EQP_HEADER_T TOWER 
+		        INNER JOIN OP_FUNCTION_HEADER_T TRACKS ON TRACKS.FNCT_LC_NO = TOWER.FNCT_LC_NO 
+		        AND TRACKS.FNCT_LC_TY = 'FL05' 
+		        AND TRACKS.FNCT_LC_STTUS = 'I'     
+		        WHERE TOWER.EQP_TY_CD = 'T001'    
+		        AND TOWER.EQP_STTUS = 'I'   
+		        AND TOWER.FNCT_LC_NO IN ($fnct_lc_no$)
+		      ) AA 
+		      WHERE AA.FLIGHT_LMP_COUNT &lt;&gt; 0 
+		  ) BB 
+		  INNER JOIN (
+		    SELECT 1 SN FROM DUAL
+		    UNION ALL
+		    SELECT 2 SN FROM DUAL
+		    UNION ALL
+		    SELECT 3 SN FROM DUAL
+		    UNION ALL
+		    SELECT 4 SN FROM DUAL
+		  ) CC ON 1 = 1 
+		) DD 
+		WHERE DD.FLIGHT_LMP_NO IS NOT NULL
+	</select>
+	
+<!-- 스케쥴 최신계약번호	-->
+	<select id="schedule.getLatestContract" parameterClass="box" resultClass="box">
+		SELECT MAX(ins_plan_no) ins_plan_no 
+	    FROM m_user_t mut INNER JOIN co_insplan_t cit ON cit.fst_bizplc_cd = mut.fst_bizplc_cd 
+	    AND cit.scd_bizplc_cd = mut.scd_bizplc_cd  
+	    WHERE mut.user_id = #user_id# 
+	</select>
+
+<!-- 지지물 리스트	 -->
+	<select id="getTransTowerList" parameterClass="box" resultClass="box">
+		
+		SELECT tracks.FNCT_LC_DTLS
+					, tower.EQP_NM
+					, substr(tower.eqp_nm, length(tracks.fnct_lc_dtls)+1,5) as tower_idx 
+					FROM op_eqp_header_t tower INNER JOIN OP_FUNCTION_HEADER_T tracks 
+					ON tower.fnct_lc_no = tracks.fnct_lc_no 
+					WHERE tracks.fnct_lc_no = #fnct_lc_no#
+					<isNotEmpty prepend="AND" property="eqp_nm">
+						substr(eqp_nm, 5, length(eqp_nm)-5) like '%' || #eqp_nm# || '%'
+					</isNotEmpty>
+					
+	</select>
+	
+<!-- 지지물 검색 -->
+	<select id="getSearchedTransTower" parameterClass="box" resultClass="box">
+		SELECT * FROM m_tower_t order by to_number(tower_idx)
+		<!-- SELECT TRACKS.FNCT_LC_DTLS
+				, TOWER.FNCT_LC_NO
+				, (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0002') AS TOWER_IDX
+		  		, TOWER.EQP_NO
+		  		, TOWER.EQP_NM
+		  		, (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0003') AS EQP_TY_CD_NM
+		  		, TOWER.LATITUDE
+		  		, TOWER.LONGITUDE
+		  		, TOWER.ADDRESS
+		FROM OP_EQP_HEADER_T TOWER INNER JOIN OP_FUNCTION_HEADER_T TRACKS    
+		  		ON TOWER.FNCT_LC_NO = TRACKS.FNCT_LC_NO 
+				AND TRACKS.FNCT_LC_STTUS = 'I' 
+		WHERE TOWER.EQP_TY_CD = 'T001' 
+		AND TOWER.EQP_STTUS = 'I'
+		AND TRACKS.FNCT_LC_NO IN ($fnct_lc_no$) 
+		ORDER BY TO_NUMBER(TOWER_IDX) -->
+<!-- 		SELECT
+	        * 
+	    FROM
+	        ( 
+	    SELECT
+	        aa.*,
+	         ROW_NUMBER() OVER(
+	        ORDER BY
+	           to_number( aa.tower_idx)) LINENUM        
+	    FROM
+	        (   SELECT
+	            tracks.fnct_lc_dtls      ,
+	            REPLACE(REPLACE(REPLACE(tower.EQP_NM,
+	            tracks.FNCT_LC_DTLS,
+	            ''),
+	            '호 철탑',
+	            ''),
+	            '호 철',
+	            '') as tower_idx      ,
+	            tower.eqp_no	,
+	            tower.fnct_lc_no	,
+	            tower.eqp_nm      ,
+	            tower.eqp_ty_cd_nm      ,
+	            latitude      ,
+	            longitude   
+	        FROM
+	            op_eqp_header_t tower 
+	        INNER JOIN
+	            op_function_header_t tracks    
+	                ON tower.fnct_lc_no = tracks.fnct_lc_no    
+	        WHERE
+	            tower.eqp_ty_cd='T001'    
+			AND tracks.fnct_lc_no IN ($fnct_lc_no$)
+
+	            <isNotEmpty prepend="AND" property="eqp_nm">
+					 REPLACE(REPLACE(REPLACE(tower.EQP_NM,
+                tracks.FNCT_LC_DTLS,
+                ''),
+                '호 철탑',
+                ''),
+                '호 철',
+                '') like '%' || #eqp_nm# || '%' 
+				</isNotEmpty>
+	            ) aa 
+	        ORDER BY
+	            to_number(tower_idx)   ) bb       
+	            <isNotEmpty property="offset">
+	    			WHERE LINENUM BETWEEN  #offset# AND #limit#  
+	        	</isNotEmpty>    -->
+	</select>
+	
+<!-- 지지물 인덱스 검색	 -->
+	<select id="getTowerIdx" resultClass="box" parameterClass="box">
+		SELECT eqp_no 
+		FROM op_eqp_header_t 
+		WHERE fnct_lc_no=#fnct_lc_no# 
+		AND eqp_ty_cd='T001'
+	</select>
+	
+<!-- 지지물 위도 경도 업데이트	 -->
+	<update id="setLatitudeWithLongitudeUpdate" parameterClass="box">
+		UPDATE op_eqp_header_t 
+		SET latitude=#latitude# 
+			, longitude=#longitude# 
+		WHERE eqp_no=#eqp_no#
+	</update>
+
+<!-- 트래킹 등록	 -->
+	<insert id="traking.setTrakingInsert" parameterClass="box">
+		INSERT INTO m_traking_user_t (traking_user_idx
+													, user_id
+													, latitude
+													, longitude
+													, device_token
+													<isNotEmpty property="remarks">
+														, remarks
+													</isNotEmpty>
+													, reg_date) 
+		VALUES(seq_m_traking_user_t.nextval
+					, #user_id#
+					, #latitude#
+					, #longitude#
+					, #device_token#
+					<isNotEmpty property="remarks">
+						, #remarks#
+					</isNotEmpty>
+					, sysdate)
+	</insert>
+	
+<!-- 트래킹 수정	 -->
+	<update id="traking.setTrakingUpdate" parameterClass="box">
+		UPDATE m_traking_user_t 
+		SET latitude = #latitude#
+			, longitude = #longitude#
+			<isNotEmpty property="remarks">
+				, remarks = #remarks#
+			</isNotEmpty>
+		WHERE user_id = #user_id#		
+	</update>
+	
+<!-- 트레킹 계정 검색	 -->
+	<select id="traking.getTrakingUserInfo" parameterClass="box" resultClass="box">
+		SELECT user_id
+		FROM m_traking_user_t
+		WHERE user_id = #user_id#
+	</select>
+
+<!-- NFC 태그 검색 -->
+	<select id="nfc.getTagInfo" parameterClass="box" resultClass="box">
+		SELECT tag
+		FROM m_nfc_t
+		WHERE eqp_no = #eqp_no#
+	</select>
+	
+<!-- 부 순시자 검색 -->
+	<select id="inspectionResult.getSubPatrolmanList" parameterClass="box" resultClass="box">
+		SELECT user_id
+				, user_name 
+		FROM m_user_t 
+		WHERE fst_bizplc_cd=#fst_bizplc_cd# 
+		AND scd_bizplc_cd=#scd_bizplc_cd# 
+		AND user_id &lt;&gt; #user_id#
+		ORDER BY user_name ASC
+	</select>
+	
+<!-- 순시결과 마스터 인덱스 검색 -->
+	<select id="inspectionResult.getMasterIdx" parameterClass="box" resultClass="box">
+		SELECT * FROM ( SELECT master_idx
+										, ROW_NUMBER() OVER(ORDER BY reg_date DESC ) rn
+								FROM m_result_master_t 
+								WHERE schedule_id=#schedule_id# 
+								AND eqp_no = #eqp_no#
+								AND ins_type_code = #ins_type_code#
+								ORDER BY reg_date DESC
+								) WHERE rn = 1
+	</select>
+	
+<!-- 순시결과 마스터 중복체크 -->
+	<select id="inspectionResult.isExistMaster" parameterClass="box" resultClass="box">
+		SELECT master_idx 
+		FROM m_result_master_t 
+		WHERE schedule_id = #schedule_id# 
+		AND eqp_no = #eqp_no# 
+		AND ins_type_code = #ins_type_code#
+	</select>
+	
+<!-- 순시결과 마스터 입력 -->
+	<insert id="inspectionResult.setMasterInsert" parameterClass="box">
+		INSERT INTO m_result_master_t (master_idx
+													, schedule_id
+													, fnct_lc_no
+													, eqp_no
+													, cycle_ym
+													, ins_type_code
+													<isNotEmpty property="nfc_id">
+														, nfc_id
+													</isNotEmpty>
+													, ins_date
+													, check_ins_name_a
+													<isNotEmpty property="check_ins_name_b">
+														, check_ins_name_b
+													</isNotEmpty>
+													, weather_code
+													<isNotEmpty property="remarks">
+														, remarks
+													</isNotEmpty>
+													, latitude
+													, longitude
+													, tag_yn
+													, reg_date
+													, reg_id) VALUES (seq_m_result_master_t.nextval
+																			, #schedule_id#
+																			, #fnct_lc_no#
+																			, #eqp_no#
+																			, #cycle_ym#
+																			, #ins_type_code#
+																			<isNotEmpty property="nfc_id">
+																				, #nfc_id#
+																			</isNotEmpty>
+																			, sysdate
+																			, #check_ins_name_a#
+																			<isNotEmpty property="check_ins_name_b">
+																				, #check_ins_name_b#
+																			</isNotEmpty>
+																			, #weather_code#
+																			<isNotEmpty property="remarks">
+																				, #remarks#
+																			</isNotEmpty>
+																			, #latitude#
+																			, #longitude#
+																			, #tag_yn#
+																			, sysdate
+																			, #reg_id#)
+	</insert>
+	
+<!-- 순시결과 마스터 수정 -->	
+	<update id="inspectionResult.setMasterUpdate" parameterClass="box">
+		UPDATE m_result_master_t
+		SET ins_date = sysdate
+		WHERE master_idx = #master_idx#
+	</update>
+	
+<!-- 순시결과 보통순시 입력 -->
+	<insert id="inspectionResult.setNormalInspectionInsert" parameterClass="box">
+		INSERT INTO m_result_aa_t (result_idx
+											, master_idx
+											, tins_result_secd
+											, examin_cn
+											<isNotEmpty property="group_file_id">
+												, group_file_id
+											</isNotEmpty>
+											<isNotEmpty property="imprmn_request_no">
+												, imprmn_request_no
+											</isNotEmpty>
+											<isNotEmpty property="gubun">
+												, gubun
+											</isNotEmpty>
+											<isNotEmpty property="tid">
+												, tid
+											</isNotEmpty>
+											) VALUES (seq_m_result_aa_t.nextval
+																					, #master_idx#
+																					, #tins_result_secd#
+																					, #examin_cn#
+																					<isNotEmpty property="group_file_id">
+																						, #group_file_id#
+																					</isNotEmpty>
+																					<isNotEmpty property="imprmn_request_no">
+																						, #imprmn_request_no#
+																					</isNotEmpty>
+																					<isNotEmpty property="gubun">
+																						, $gubun$
+																					</isNotEmpty>
+																					<isNotEmpty property="tid">
+																						, #tid#
+																					</isNotEmpty>
+															)	
+	</insert>
+	
+<!-- 순시결과 보통순시 수정 -->
+	<update id="inspectionResult.setNormalInspectionUpdate" parameterClass="box">
+		UPDATE m_result_aa_t 
+		SET tins_result_secd = #tins_result_secd#
+			, examin_cn = #examin_cn#
+			<isNotEmpty property="group_file_id">
+				, group_file_id = #group_file_id#
+			</isNotEmpty>
+			<isNotEmpty property="imprmn_request_no">
+				, imprmn_request_no = #imprmn_request_no#
+			</isNotEmpty>
+			<isNotEmpty property="gubun">
+				, gubun = #gubun#
+			</isNotEmpty>
+			<isNotEmpty property="tid">
+				, tid = #tid#
+			</isNotEmpty>
+		WHERE master_idx = #master_idx#
+	</update>
+	
+<!-- 순시결과 점퍼접속개소 입력	 -->
+	<insert id="inspectionResult.setConnectionPointJumper" parameterClass="box">
+		INSERT INTO m_result_bb_t(result_idx
+											, master_idx
+<!-- 											, out_temp -->
+											, cl_no
+											, ttm_load
+											, cndctr_co
+											, pwln_eqp_no
+											<isNotEmpty property="group_file_id">
+												, group_file_id
+											</isNotEmpty>
+											) VALUES(seq_m_result_bb_t.nextval
+																			, #master_idx#
+<!-- 																			, #out_temp# -->
+																			, #cl_no#
+																			, #ttm_load#
+																			, #cndctr_co#
+																			, #pwln_eqp_no#
+																			<isNotEmpty property="group_file_id">
+																				, #group_file_id#
+																			</isNotEmpty>
+															)
+	</insert>
+	
+<!-- 순시결과 점퍼접속개소 인덱스 검색 -->
+	<select id="inspectionResult.getConnectionPointJumperIdx" parameterClass="box" resultClass="box">
+		SELECT result_idx
+		FROM m_result_bb_t
+		WHERE master_idx = #master_idx#
+		AND ROWNUM &lt; 2
+		ORDER BY result_idx DESC
+	</select>
+	
+<!-- 순시결과 점퍼접속개소 설비번호 중복체크	 -->
+	<select id="inspectionResult.isExistPwlneqpnoJumper" parameterClass="box" resultClass="box">
+		SELECT result_idx
+		FROM m_result_bb_t
+		WHERE master_idx = #master_idx#
+		AND cl_no = #cl_no#
+		AND pwln_eqp_no = #pwln_eqp_no#
+	</select>
+	
+<!-- 순시결과 점퍼접속개소 수정	-->
+	<update id="inspectionResult.setConnectionPointJumperUpdate" parameterClass="box">
+		UPDATE m_result_bb_t 
+		SET group_file_id = #group_file_id#
+		WHERE master_idx = #master_idx#
+	</update>
+		
+<!-- 순시결과 점퍼접속개수 측정 입력 -->
+	<insert id="inspectionResult.setMeasuringConnectionPointJumper" parameterClass="box">
+		INSERT INTO m_result_bbbb_t(result_bbbb_idx
+												, result_idx
+												, cl_no
+												, pwln_eqp_no
+												, cndctr_sn
+												, cabl_tp
+												, cnpt_tp
+												, good_secd
+												<isNotEmpty property="imprmn_request_no">
+													, imprmn_request_no
+												</isNotEmpty>
+												) VALUES (seq_m_result_bbbb_t.nextval
+																						, #result_idx#
+																						, #cl_no#
+																						, #pwln_eqp_no#
+																						, #cndctr_sn#
+																						, #cabl_tp#
+																						, #cnpt_tp#
+																						, #good_secd#
+																						<isNotEmpty property="imprmn_request_no">
+																							, #imprmn_request_no#
+																						</isNotEmpty>
+												)
+	</insert>
+
+<!-- 순시결과 점퍼접속개소 측정 중복체크 만들엉야됨--> 
+	<select id="inspectionResult.isExistBBBB" parameterClass="box" resultClass="box">
+		SELECT result_idx 
+				, result_bbbb_idx
+		FROM	m_result_bbbb_t
+		WHERE result_idx = #result_idx#
+		<!-- cl_no = #cl_no#
+		AND pwln_eqp_no = #pwln_eqp_no#
+		AND cndctr_sn = #cndctr_sn# -->
+	</select>
+	
+<!-- 순시결과 점퍼접속개소 측정 수정 -->
+	<update id="inspectionResult.setMeasuringConnectionPointJumperUpdate" parameterClass="box">
+		UPDATE m_result_bbbb_t 
+		SET cabl_tp = #cabl_tp#
+			, cnpt_tp = #cnpt_tp#
+			, good_secd = #good_secd#
+			<isNotEmpty property="imprmn_request_no">
+				, imprmn_request_no
+			</isNotEmpty>		
+		WHERE result_idx = #result_idx#
+		<!-- cl_no = #cl_no#
+		AND pwln_eqp_no = #pwln_eqp_no#
+		AND cndctr_sn = #cndctr_sn# -->	
+	</update>
+	
+<!-- 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+	
+<!-- 순시결과 전선접속개소 입력	 -->
+	<insert id="inspectionResult.setConnectionPointWire" parameterClass="box">
+		INSERT INTO m_result_cc_t(result_idx
+											, master_idx
+<!-- 											, out_temp -->
+											, cl_no
+											, ttm_load
+											, cndctr_co
+											, pwln_eqp_no
+											<isNotEmpty property="group_file_id">
+												, group_file_id
+											</isNotEmpty>
+											) VALUES(seq_m_result_cc_t.nextval
+																			, #master_idx#
+<!-- 																			, #out_temp# -->
+																			, #cl_no#
+																			, #ttm_load#
+																			, #cndctr_co#
+																			, #pwln_eqp_no#
+																			<isNotEmpty property="group_file_id">
+																				, #group_file_id#
+																			</isNotEmpty>
+															)
+	</insert>
+	
+<!-- 순시결과 전선접속개소 인덱스 검색 -->
+	<select id="inspectionResult.getConnectionPointWireIdx" parameterClass="box" resultClass="box">
+		SELECT result_idx
+		FROM m_result_cc_t
+		WHERE master_idx = #master_idx#
+		AND ROWNUM &lt; 2
+		ORDER BY result_idx DESC
+	</select>
+	
+<!-- 순시결과 전선접속개소 설비번호 중복체크	 -->
+	<select id="inspectionResult.isExistPwlneqpno" parameterClass="box" resultClass="box">
+		SELECT result_idx
+		FROM m_result_cc_t
+		WHERE master_idx = #master_idx#
+		AND cl_no = #cl_no#
+		AND pwln_eqp_no = #pwln_eqp_no#
+	</select>
+	
+<!-- 순시결과 전선접속개소 수정	-->
+	<update id="inspectionResult.setConnectionPointWireUpdate" parameterClass="box">
+		UPDATE m_result_cc_t 
+		SET group_file_id = #group_file_id#
+		WHERE master_idx = #master_idx#
+	</update>
+		
+<!-- 순시결과 전선접속개수 측정 입력 -->
+	<insert id="inspectionResult.setMeasuringConnectionPointWire" parameterClass="box">
+		INSERT INTO m_result_cccc_t(result_cccc_idx
+												, result_idx
+												, cl_no
+												, pwln_eqp_no
+												, cndctr_sn
+												, cabl_tp
+												, cnpt_tp
+												, good_secd
+												<isNotEmpty property="imprmn_request_no">
+													, imprmn_request_no
+												</isNotEmpty>
+												) VALUES (seq_m_result_cccc_t.nextval
+																						, #result_idx#
+																						, #cl_no#
+																						, #pwln_eqp_no#
+																						, #cndctr_sn#
+																						, #cabl_tp#
+																						, #cnpt_tp#
+																						, #good_secd#
+																						<isNotEmpty property="imprmn_request_no">
+																							, #imprmn_request_no#
+																						</isNotEmpty>
+												)
+	</insert>
+
+<!-- 순시결과 전선접속개소 측정 중복체크 -->
+	<select id="inspectionResult.isExistCCCC" parameterClass="box" resultClass="box">
+		SELECT result_idx 
+				, result_cccc_idx
+		FROM	m_result_cccc_t
+		WHERE result_idx = #result_idx# 
+		AND cndctr_sn = #cndctr_sn#
+	</select>
+	
+<!-- 순시결과 전선접속개소 측정 수정 -->
+	<update id="inspectionResult.setMeasuringConnectionPointWireUpdate" parameterClass="box">
+		UPDATE m_result_cccc_t 
+		SET cabl_tp = #cabl_tp#
+			, cnpt_tp = #cnpt_tp#
+			, good_secd = #good_secd#
+			<isNotEmpty property="imprmn_request_no">
+				, imprmn_request_no
+			</isNotEmpty>		
+		WHERE result_idx = #result_idx#
+		AND cndctr_sn = #cndctr_sn#
+	</update>
+		
+<!-- 순시결과 항공등점등점검 입력 -->
+	<insert id="inspectionResult.setCheckAirFailureLight" parameterClass="box">
+		INSERT INTO m_result_dd_t ( result_idx
+												, master_idx
+												, flight_lmp_knd
+												, flight_lmp_no
+												, srcelct_knd
+												, flck_co
+												, lightg_stadiv_cd
+												, good_secd
+												<isNotEmpty property="imprmn_request_no">
+													, imprmn_request_no
+												</isNotEmpty>
+												<isNotEmpty property="group_file_id">
+													, group_file_id
+												</isNotEmpty>
+											  ) values (seq_m_result_dd_t.nextval
+														    ,#master_idx#
+														    , #flight_lmp_knd#
+															, #flight_lmp_no#
+															, #srcelct_knd#
+															, #flck_co#
+															, #lightg_stadiv_cd#
+															, #good_secd#
+															<isNotEmpty property="imprmn_request_no">
+																, #imprmn_request_no#
+															</isNotEmpty>
+															<isNotEmpty property="group_file_id">
+																, #group_file_id#
+															</isNotEmpty>
+														  )
+	</insert>
+	
+<!-- 순시결과 항공점등점검 중복체크 -->
+	<select id="inspectionResult.isExistDD" parameterClass="box" resultClass="box">
+		SELECT result_idx
+		FROM m_result_dd_t
+		WHERE master_idx = #master_idx# 
+		AND flight_lmp_knd = #flight_lmp_knd#
+		AND flight_lmp_no = #flight_lmp_no#
+		AND srcelct_knd = #srcelct_knd#
+	</select>
+	
+<!-- 순시결과 항공등점등점검 수정 -->
+	<update id="inspectionResult.setCheckAirFailureLightUpdate" parameterClass="box">
+		UPDATE m_result_dd_t 
+		SET flck_co = #flck_co#
+			, lightg_stadiv_cd = #lightg_stadiv_cd#
+			, good_secd = #good_secd#
+			<isNotEmpty property="imprmn_request_no">
+				, imprmn_request_no = #imprmn_request_no#
+			</isNotEmpty>
+			<isNotEmpty property="group_file_id">
+				, group_file_id = #group_file_id#
+			</isNotEmpty>
+		WHERE master_idx = #master_idx#
+		AND flight_lmp_knd = #flight_lmp_knd#
+		AND flight_lmp_no = #flight_lmp_no#
+		AND srcelct_knd = #srcelct_knd#
+	</update>
+	
+<!-- 순시결과 항공장애등 점검 입력	 -->
+	<insert id="inspectionResult.setCheckAirFailure" parameterClass="box">
+		INSERT INTO m_result_hh_t(result_idx
+											, master_idx
+											, flight_lmp_knd
+											, flight_lmp_no
+											, srcelct_knd
+											, ctrl_ban_gdbd_secd
+											, slrcl_gdbd_secd
+											, srgbtry_gdbd_secd
+											, rgist_gu_gdbd_secd
+											, cabl_gdbd_secd
+											, good_secd
+											<isNotEmpty property="imprmn_request_no">
+												, imprmn_request_no
+											</isNotEmpty>
+											<isNotEmpty property="group_file_id">
+												, group_file_id
+											</isNotEmpty>
+											) VALUES (seq_m_result_hh_t.nextval
+														, #master_idx#
+														, #flight_lmp_knd#
+														, #flight_lmp_no#
+														, #srcelct_knd#
+														, #ctrl_ban_gdbd_secd#
+														, #slrcl_gdbd_secd#
+														, #srgbtry_gdbd_secd#
+														, #rgist_gu_gdbd_secd#
+														, #cabl_gdbd_secd#
+														, #good_secd#
+														<isNotEmpty property="imprmn_request_no">
+															, #imprmn_request_no#
+														</isNotEmpty>
+														<isNotEmpty property="group_file_id">
+															, #group_file_id#
+														</isNotEmpty>
+														)
+	</insert>
+	
+<!-- 순시결과 항공장애 중복체크	 -->
+	<select id="inspectionResult.isExistHH" parameterClass="box" resultClass="box">
+		SELECT result_idx
+		FROM m_result_hh_t
+		WHERE master_idx = #master_idx# 
+		AND flight_lmp_knd = #flight_lmp_knd#
+		AND flight_lmp_no = #flight_lmp_no#
+		AND srcelct_knd = #srcelct_knd#
+	</select>
+	
+<!-- 순시결과 항공장애등 점검 수정	 -->	
+	<update id="inspectionResult.setCheckAirFailureUpdate" parameterClass="box">
+		UPDATE m_result_hh_t
+		SET ctrl_ban_gdbd_secd = #ctrl_ban_gdbd_secd#
+			, slrcl_gdbd_secd = #slrcl_gdbd_secd#
+			, srgbtry_gdbd_secd = #srgbtry_gdbd_secd#
+			, rgist_gu_gdbd_secd = #rgist_gu_gdbd_secd#
+			, cabl_gdbd_secd = #cabl_gdbd_secd#
+			, good_secd = #good_secd#
+			<isNotEmpty property="imprmn_request_no">
+				, imprmn_request_no = #imprmn_request_no#
+			</isNotEmpty>
+			<isNotEmpty property="group_file_id">
+				, group_file_id = #group_file_id#
+			</isNotEmpty>
+		WHERE master_idx = #master_idx#
+		AND flight_lmp_knd = #flight_lmp_knd#
+		AND flight_lmp_no = #flight_lmp_no#
+		AND srcelct_knd = #srcelct_knd#
+	</update>	
+	
+<!-- 순시결과 접지저항 입력 -->
+	<insert id="inspectionResult.setGroundResistanceMeasurements" parameterClass="box">
+		INSERT INTO m_result_ee_t (result_idx
+											, master_idx
+											, msr_co
+											, stdr_rs
+											, good_secd
+											, pmttr
+											<isNotEmpty property="group_file_id">
+												, group_file_id
+											</isNotEmpty>
+											<isNotEmpty property="imprmn_request_no">
+												, imprmn_request_no
+											</isNotEmpty>	
+											) VALUES (seq_m_result_ee_t.nextval
+																			, #master_idx#
+																			, #msr_co#
+																			, #stdr_rs#
+																			, #good_secd#
+																			, #pmttr#
+																			<isNotEmpty property="group_file_id">
+																				, #group_file_id#
+																			</isNotEmpty>	
+																			<isNotEmpty property="imprmn_request_no">
+																				, imprmn_request_no
+																			</isNotEmpty>	
+															)
+	</insert>
+	
+<!-- 순시결과 접지저항 수정 -->
+	<update id="inspectionResult.setGroundResistanceMeasurementsUpdate" parameterClass="box">
+		UPDATE m_result_ee_t
+		SET msr_co = #msr_co#
+			, good_secd = #good_secd#
+			, pmttr = #pmttr#
+			<isNotEmpty property="group_file_id">
+				, group_file_id = #group_file_id#
+			</isNotEmpty>
+			<isNotEmpty property="imprmn_request_no">
+				, imprmn_request_no = #imprmn_request_no#
+			</isNotEmpty>	
+		WHERE master_idx = #master_idx#
+	</update>
+	
+<!-- 순시결과 접지저항 인덱스 검색 -->
+	<select id="inspectionResult.getGroundResistanceMeasurementsIdx" parameterClass="box" resultClass="box">
+		SELECT result_idx
+		FROM m_result_ee_t
+		WHERE master_idx = #master_idx#
+	</select>
+	
+<!-- 순시결과 접지저항 측정 입력 -->
+	<insert id="inspectionResult.setSubGroundResistanceMeasurements" parameterClass="box">
+		INSERT INTO m_result_eeee_t (result_idx
+												, msr_co
+												, msr_odr
+												, msr_rs) VALUES (#result_idx#
+																		, #msr_co#
+																		, #msr_odr#
+																		, #msr_rs#)
+	</insert>
+	
+<!-- 순시결과 접지저항 측정 수정 -->
+	<update id="inspectionResult.setSubGroundResistanceMeasurementsUpdate" parameterClass="box">
+		UPDATE m_result_eeee_t
+		SET msr_rs = #msr_rs#
+			, msr_co = #msr_co#
+		WHERE result_idx = #result_idx#
+		AND msr_odr = #msr_odr#
+	</update>
+	
+<!-- 저항기준값 검색 -->
+	<select id="inspectionResult.getResistanceStandards" parameterClass="box" resultClass="box">
+		SELECT CASE WHEN SUBSTR(fnct_lc_dtls, 0, instr(fnct_lc_dtls, 'kV')-1) = '765' THEN '15' 
+		WHEN  SUBSTR(fnct_lc_dtls, 0, INSTR(fnct_lc_dtls, 'kV')-1) = '345' THEN '20'
+		WHEN  SUBSTR(fnct_lc_dtls, 0, INSTR(fnct_lc_dtls, 'kV')-1) = '154' THEN '15'
+		WHEN  SUBSTR(fnct_lc_dtls, 0, INSTR(fnct_lc_dtls, 'kV')-1) =  '66' THEN '30' 
+		else '15' end resistance_value
+		FROM op_function_header_t where fnct_lc_no = #fnct_lc_no#
+	</select>
+	
+<!-- 순시결과 불량애자검출 입력	 -->
+	<insert id="inspectionResult.setAgilePoorDetection" parameterClass="box">
+
+		INSERT INTO m_result_ff_t (result_idx
+											, master_idx
+											, cl_no
+											, ty_secd
+											, phs_secd
+											<isNotEmpty property="insbty_lft">
+											, insbty_lft
+											</isNotEmpty>
+											<isNotEmpty property="insbty_rit">
+											, insbty_rit
+											</isNotEmpty>
+											, insr_qy
+											, bad_insr_qy
+											, good_secd
+											, insr_eqp_no
+											<isNotEmpty property="group_file_id">
+												, group_file_id
+											</isNotEmpty>
+											) VALUES (seq_m_result_ff_t.nextval
+														, #master_idx#
+														, #cl_no#
+														, #ty_secd#
+														, #phs_secd#
+														<isNotEmpty property="insbty_lft">
+															, #insbty_lft#
+														</isNotEmpty>
+														<isNotEmpty property="insbty_rit">
+															, #insbty_rit#
+														</isNotEmpty>
+														, #insr_qy#
+														, #bad_insr_qy#
+														, #good_secd#
+														, #insr_eqp_no#
+														<isNotEmpty property="group_file_id">
+															, #group_file_id#
+														</isNotEmpty>	
+														)
+
+	</insert>
+	
+<!-- 불량애자 중복체크 -->
+	<select id="inspectionResult.isExistFF" parameterClass="box" resultClass="box">
+		SELECT result_idx 
+		FROM m_result_ff_t 
+		WHERE master_idx = #master_idx#
+		AND cl_no = #cl_no# 
+		AND ty_secd = #ty_secd# 
+		AND phs_secd = #phs_secd#
+	</select>
+	
+<!-- 순시결과 불량애자 수정 -->
+	<update id="inspectionResult.setAgilePoorDetectionUpdate" parameterClass="box">
+		UPDATE m_result_ff_t
+		SET insr_qy = #insr_qy#
+			, bad_insr_qy = #bad_insr_qy#
+			, good_secd = #good_secd#
+			<isNotEmpty property="insbty_lft">
+			, insbty_lft = #insbty_lft#
+			</isNotEmpty>
+			<isNotEmpty property="insbty_rit">
+			, insbty_rit = #insbty_rit#
+			</isNotEmpty>
+			<isNotEmpty property="group_file_id">
+				, group_file_id = #group_file_id#
+			</isNotEmpty>
+		WHERE master_idx = #master_idx# 
+		AND cl_no = #cl_no#
+		AND ty_secd = #ty_secd#
+		AND phs_secd = #phs_secd#  				
+	</update>
+	
+<!-- 순시결과 기별정밀정검 입력	 -->
+	<insert id="inspectionResult.setMessageAndThoroughInspection" parameterClass="box">
+		INSERT INTO m_result_gg_t (result_idx
+											, master_idx
+											, ins_itm_cd
+											, ins_ty_cd
+											, ins_kndnm
+											, ins_senm
+											, ins_tgt_nm
+											, main_itm_nm
+											, use_at
+											, mark_ordr
+											<isNotEmpty property="group_file_id">
+												, group_file_id
+											</isNotEmpty>	
+											) VALUES (seq_m_result_gg_t.nextval
+														, #master_idx#
+														, #ins_itm_cd#
+														, #ins_ty_cd#
+														, #ins_kndnm#
+														, #ins_senm#
+														, #ins_tgt_nm#
+														, #main_itm_nm#
+														, #use_at#
+														, #mark_ordr#
+														<isNotEmpty property="group_file_id">
+															, #group_file_id#
+														</isNotEmpty>
+														)
+	</insert>
+	
+	<!-- 순시결과 기별정검  인덱스 검색 -->
+	<select id="inspectionResult.getMessageAndThoroughInspectionIdx" parameterClass="box" resultClass="box">
+		SELECT result_idx
+		FROM m_result_gg_t
+		WHERE master_idx = #master_idx#
+	</select>
+		
+<!-- 순시결과 서브 기별정밀점검 입력 -->
+	<insert id="inspectionResult.setSubMessageAndThoroughInspection" parameterClass="box">
+		INSERT INTO m_result_gggg_t(result_idx
+												, master_idx
+												, ins_itm_cd
+												, good_secd
+												<isNotEmpty property="group_file_id">
+													, group_file_id
+												</isNotEmpty>	
+												<isNotEmpty property="imprmn_request_no">
+													, imprmn_request_no
+												</isNotEmpty>
+												) VALUES (seq_m_result_gggg_t.nextval
+															, #master_idx#
+															, LPAD(#ins_itm_cd#, 5, '0')
+															, #good_secd#
+															<isNotEmpty property="group_file_id">
+																, #group_file_id#
+															</isNotEmpty>
+															<isNotEmpty property="imprmn_request_no">
+																, #imprmn_request_no#
+															</isNotEmpty>)
+	</insert>
+	
+<!-- 순시결과 서브 기별정밀점검 수정 -->
+	<update id="inspectionResult.setSubMessageAndThoroughInspectionUpdate" parameterClass="box">
+		UPDATE m_result_gggg_t
+		SET good_secd = #good_secd#
+								<isNotEmpty property="group_file_id">
+									, group_file_id = #group_file_id#
+								</isNotEmpty>
+		WHERE master_idx = #master_idx#
+		AND ins_itm_cd =  LPAD(#ins_itm_cd#, 5, '0')
+	</update>
+	
+<!-- 	예방순시 조회 -->
+	<select id="inspectionResult.getPreventingInspection" parameterClass="box" resultClass="box">
+		SELECT OCT.RGT_SN
+					, OCT.BEGIN_EQP_NO
+					, OCT.END_EQP_NO
+					, REPLACE(REPLACE(REPLACE(MTTT_A.EQP_NM,MTT.FNCT_LC_DTLS,''),'호 철탑',''),'호 철','') BEGIN_EQP_NM
+					, REPLACE(REPLACE(REPLACE(MTTT_B.EQP_NM,MTT.FNCT_LC_DTLS,''),'호 철탑',''),'호 철','') END_EQP_NM
+					, OCT.CWRK_NM 
+					, OPTR.TINS_RESULT_SECD 
+					, OPTR.TINS_RESULT 
+		FROM OT_CWRKST_T OCT 
+		INNER JOIN op_function_header_t MTT ON OCT.FNCT_LC_NO = MTT.FNCT_LC_NO
+		INNER JOIN op_eqp_header_t MTTT_A ON OCT.BEGIN_EQP_NO = MTTT_A.EQP_NO AND OCT.FNCT_LC_NO = MTTT_A.FNCT_LC_NO
+		INNER JOIN op_eqp_header_t MTTT_B ON OCT.END_EQP_NO = MTTT_B.EQP_NO AND OCT.FNCT_LC_NO = MTTT_B.FNCT_LC_NO 
+		LEFT JOIN OT_PRVT_TINS_RLT_T OPTR ON OCT.RGT_SN = OPTR.RGT_SN 
+<!-- 		AND OCT.BEGIN_EQP_NO = OPTR.BEFORE_EQP_NO AND OCT.END_EQP_NO = OPTR.AFTER_EQP_NO  -->
+		WHERE OCT.FST_BIZPLC_CD = #fst_bizplc_cd# AND OCT.SCD_BIZPLC_CD = #scd_bizplc_cd# 
+		AND OCT.FNCT_LC_NO = #fnct_lc_no# AND OCT.STTUS_CD = '005' 
+		<isNotEmpty property="rgt_sn">
+			AND OCT.rgt_sn = #rgt_sn#
+		</isNotEmpty>
+		ORDER BY OCT.DSCVRY_DT DESC
+	</select>
+
+<!-- 순시결과 예방순시 입력 -->
+	<insert id="inspectionResult.setPreventingInspection" parameterClass="box">
+		INSERT INTO ot_prvt_tins_rlt_t (result_idx
+														, before_eqp_no
+														, after_eqp_no
+														, cwrk_spt_nm
+														, tins_result_secd
+														, tins_result
+														, rgt_sn
+														<isNotEmpty property="group_file_id">
+															, group_file_id
+														</isNotEmpty>
+														<isNotEmpty property="imprmn_request_no">
+															, imprmn_request_no
+														</isNotEmpty>
+														<isNotEmpty property="gubun">
+															, gubun
+														</isNotEmpty>
+														<isNotEmpty property="tid">
+															, tid
+														</isNotEmpty>) VALUES (seq_ot_prvt_tins_rlt_t.nextval
+																						, #before_eqp_no#
+																						, #after_eqp_no#
+																						, #cwrk_spt_nm#
+																						, #tins_result_secd#
+																						, #tins_result#
+																						, #rgt_sn#
+																						<isNotEmpty property="group_file_id">
+																							, #group_file_id#
+																						</isNotEmpty>
+																						<isNotEmpty property="imprmn_request_no">
+																							, #imprmn_request_no#
+																						</isNotEmpty>
+																						<isNotEmpty property="gubun">
+																							, #gubun#
+																						</isNotEmpty>
+																						<isNotEmpty property="tid">
+																							, #tid#
+																						</isNotEmpty>)
+	</insert>
+	
+<!-- 순시결과 예방순시 수정	 -->
+	<update id="inspectionResult.setPreventingInspectionUpdate" parameterClass="box">
+		UPDATE ot_prvt_tins_rlt_t 
+		SET tins_result_secd = #tins_result_secd#
+										, tins_result = #tins_result#
+										<isNotEmpty property="group_file_id">
+										, group_file_id = #group_file_id#
+										</isNotEmpty>
+		WHERE rgt_sn = #rgt_sn#					
+	</update>
+	
+<!-- 순시결과 예방순시 rgt_sn 필드 존재여부 확인	 -->
+	<select id="inspectionResult.getRgtsnIsExist" parameterClass="box" resultClass="box">
+		SELECT rgt_sn
+		FROM ot_prvt_tins_rlt_t
+		WHERE rgt_sn = #rgt_sn#
+	</select>
+	
+<!-- 지지물 테이블 위도 경도가 IS NOT NULL 인 데이터만 검색 -->
+	<select id="eqpDAO.getLatitude" parameterClass="box" resultClass="box">
+		SELECT eqp_no  
+				, latitude
+				, longitude
+		FROM op_eqp_header_t 
+		WHERE latitude IS NOT NULL
+	</select>
+
+<!-- 주소 입력 -->
+	<update id="eqpDAO.setAddress" parameterClass="box">
+		UPDATE op_eqp_header_t
+		SET address = #address#
+		WHERE eqp_no = #eqp_no#
+	</update>
+</sqlMap>

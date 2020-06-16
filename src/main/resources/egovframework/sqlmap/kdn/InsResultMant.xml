@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="InsResultMant">
+	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
+	
+	<!--  기기별 점검 목록	 -->
+	<resultMap id="Result.getInsResultMantView" class="box">
+		<result property="fnct_lc_dtls" column="FNCT_LC_DTLS"/>
+		<result property="check_start_time" column="CHECK_START_TIME"/>
+		<result property="check_end_time" column="CHECK_END_TIME"/>
+		<result property="inspect_type" column="INSPECT_TYPE"/>
+		<result property="inspect_item_1" column="INSPECT_ITEM_1"/>
+		<result property="inspect_item_2" column="INSPECT_ITEM_2"/>
+		<result property="inspect_item_3" column="INSPECT_ITEM_3"/>
+		<result property="inspect_item_4" column="INSPECT_ITEM_4"/>
+		<result property="inspect_item_5" column="INSPECT_ITEM_5"/>
+		<result property="inspect_item_6" column="INSPECT_ITEM_6"/>
+		<result property="inspect_item_7" column="INSPECT_ITEM_7"/>
+		<result property="inspect_item_8" column="INSPECT_ITEM_8"/>
+		<result property="inspect_item_9" column="INSPECT_ITEM_9"/>
+		<result property="inspect_item_10" column="INSPECT_ITEM_10"/>
+		<result property="inspect_item_11" column="INSPECT_ITEM_11"/>
+		<result property="inspect_item_12" column="INSPECT_ITEM_12"/>
+		<result property="inspect_item_13" column="INSPECT_ITEM_13"/>
+		<result property="inspect_item_14" column="INSPECT_ITEM_14"/>
+		<result property="inspect_item_15" column="INSPECT_ITEM_15"/>
+		<result property="inspect_item_16" column="INSPECT_ITEM_16"/>
+		<result property="inspect_item_17" column="INSPECT_ITEM_17"/>
+		<result property="inspect_item_18" column="INSPECT_ITEM_18"/>
+	</resultMap>	
+	<select id="InsResultMant.getInsResultMantView" parameterClass="box" resultMap="Result.getInsResultMantView">
+		SELECT TRK.FNCT_LC_DTLS , GG.CHECK_START_TIME , GG.CHECK_END_TIME , GG.INSPECT_TYPE , 
+				GG.INSPECT_ITEM_1 , GG.INSPECT_ITEM_2 , GG.INSPECT_ITEM_3 , GG.INSPECT_ITEM_4 , GG.INSPECT_ITEM_5 , 
+				GG.INSPECT_ITEM_6 , GG.INSPECT_ITEM_7 , GG.INSPECT_ITEM_8 , GG.INSPECT_ITEM_9 , GG.INSPECT_ITEM_10 , 
+				GG.INSPECT_ITEM_11 , GG.INSPECT_ITEM_12 , GG.INSPECT_ITEM_13 , GG.INSPECT_ITEM_14 , GG.INSPECT_ITEM_15 , 
+				GG.INSPECT_ITEM_16 , GG.INSPECT_ITEM_17 , GG.INSPECT_ITEM_18 
+			FROM
+			    M_RESULT_MASTER_T MAST INNER JOIN M_RESULT_GG_T GG ON MAST.MASTER_IDX = GG.MASTER_IDX
+			    INNER JOIN M_TRACKS_T TRK ON MAST.FNCT_LC_NO = TRK.FNCT_LC_NO
+			WHERE
+			    (
+		    	    MAST.CHECK_INS_NAME_A =  #check_ins_name# 
+		       	 OR MAST.CHECK_INS_NAME_B =  #check_ins_name#
+		    	)	
+			AND MAST.FNCT_LC_NO = #fnct_lc_no#
+			
+			<![CDATA[
+			AND INS_DATE > to_date(#ins_date_start# ,'yyyymmddhh24miss')
+			AND INS_DATE < to_date(#ins_date_end#, 'yyyymmddhh24miss')
+			]]>
+	</select>
+
+	<!--  기기별 점검 목록	마스터 -->
+	<resultMap id="Result.getInsResultMantMaster" class="box">
+		<result property="ins_kndnm" column="INS_KNDNM" />
+		<result property="ins_senm" column="INS_SENM" />
+		<result property="ins_tgt_nm" column="INS_TGT_NM" />
+		<result property="main_itm_nm" column="MAIN_ITM_NM" />
+		<result property="ins_itm_cd" column="INS_ITM_CD" />
+	</resultMap>
+
+	<select id="InsResultMant.getInsResultMantMaster" parameterClass="box" resultMap="Result.getInsResultMantMaster">
+		SELECT INS_ITM_CD , INS_KNDNM , INS_SENM , INS_TGT_NM , MAIN_ITM_NM
+		FROM OT_INS_CHK_ITM_T itm
+		LEFT JOIN M_RESULT_MASTER_T mast  ON ITM.INS_TY_CD = mast.INS_TYPE_CODE
+		WHERE  itm.INS_TY_CD = #ins_ty_cd#
+		AND itm.USE_AT = '1'
+		ORDER BY itm.INS_ITM_CD
+	</select>
+
+
+	<!--  기별 점검 insert	 -->
+	<insert id="InsResultMant.insertInsResultGGT" parameterClass="int">
+		INSERT INTO m_result_gg_t 
+		(result_idx, master_idx, eqp_no, ins_itm_cd, good_secd, imprmn_requst_no)
+		values( SEQ_M_RESULT_GG_T.NEXTVAL , 
+		#master_idx# , #eqp_no#  , #ins_itm_cd# , #good_secd# , #imprmn_requst_no# )
+	</insert>
+
+	<!--  기별 점검 목록 (하단부분)	 -->
+	<resultMap id="Result.getInsResultGGT" class="box">
+		<result property="eqp_no" column="EQP_NO" />
+		<result property="eqp_nm" column="EQP_NM" />
+		<result property="ins_date" column="INS_DATE" />
+		<result property="group_file_id" column="GROUP_FILE_ID" />
+		<result property="value_00001" column="VALUE_00001" />
+		<result property="value_00002" column="VALUE_00002" />
+		<result property="value_00003" column="VALUE_00003" />
+		<result property="value_00004" column="VALUE_00004" />
+		<result property="value_00005" column="VALUE_00005" />
+		<result property="value_00006" column="VALUE_00006" />
+		<result property="value_00007" column="VALUE_00007" />
+		<result property="value_00008" column="VALUE_00008" />
+		<result property="value_00009" column="VALUE_00009" />
+		<result property="value_00010" column="VALUE_00010" />
+		<result property="value_00011" column="VALUE_00011" />
+		<result property="value_00012" column="VALUE_00012" />
+		<result property="value_00013" column="VALUE_00013" />
+		<result property="value_00014" column="VALUE_00014" />
+		<result property="value_00015" column="VALUE_00015" />
+		<result property="value_00016" column="VALUE_00016" />
+		<result property="value_00017" column="VALUE_00017" />
+		<result property="value_00018" column="VALUE_00018" />
+	</resultMap>
+	<select id="InsResultMant.getInsResultGGT" parameterClass="box" resultMap="Result.getInsResultGGT">
+		SELECT 
+			EQP_NO
+			, EQP_NM
+			, INS_DATE
+			, GROUP_FILE_ID
+			, MAX(DECODE(SEQ,1,GOOD_SECD)) VALUE_00001
+			, MAX(DECODE(SEQ,2,GOOD_SECD)) VALUE_00002
+			, MAX(DECODE(SEQ,3,GOOD_SECD)) VALUE_00003
+			, MAX(DECODE(SEQ,4,GOOD_SECD)) VALUE_00004
+			, MAX(DECODE(SEQ,5,GOOD_SECD)) VALUE_00005
+			, MAX(DECODE(SEQ,6,GOOD_SECD)) VALUE_00006
+			, MAX(DECODE(SEQ,7,GOOD_SECD)) VALUE_00007
+			, MAX(DECODE(SEQ,8,GOOD_SECD)) VALUE_00008
+			, MAX(DECODE(SEQ,9,GOOD_SECD)) VALUE_00009
+			, MAX(DECODE(SEQ,10,GOOD_SECD)) VALUE_00010
+			, MAX(DECODE(SEQ,11,GOOD_SECD)) VALUE_00011
+			, MAX(DECODE(SEQ,12,GOOD_SECD)) VALUE_00012
+			, MAX(DECODE(SEQ,13,GOOD_SECD)) VALUE_00013
+			, MAX(DECODE(SEQ,14,GOOD_SECD)) VALUE_00014
+			, MAX(DECODE(SEQ,15,GOOD_SECD)) VALUE_00015
+			, MAX(DECODE(SEQ,16,GOOD_SECD)) VALUE_00016
+			, MAX(DECODE(SEQ,17,GOOD_SECD)) VALUE_00017
+			, MAX(DECODE(SEQ,18,GOOD_SECD)) VALUE_00018
+		FROM (
+			SELECT AA.EQP_NO, CC.CHARTR_VALUE AS EQP_NM, AA.INS_DATE, BB.INS_ITM_CD, BB.GOOD_SECD, BB.GROUP_FILE_ID, ROW_NUMBER() OVER(PARTITION BY AA.EQP_NO ORDER BY BB.INS_ITM_CD) SEQ
+			FROM M_RESULT_MASTER_T AA 
+			INNER JOIN M_RESULT_GGGG_T BB ON AA.MASTER_IDX = BB.MASTER_IDX 
+			INNER JOIN OP_EQP_ITEM_T CC ON AA.EQP_NO = CC.EQP_NO AND CC.CHARTR_CD = 'PM-A-0002'
+			WHERE AA.SCHEDULE_ID = trim(#schedule_id#) 
+			ORDER BY AA.EQP_NO, BB.INS_ITM_CD 
+		) TOTAL_RESULT
+		GROUP BY EQP_NO, EQP_NM, INS_DATE, GROUP_FILE_ID
+		ORDER BY TO_NUMBER(EQP_NM) 
+	</select>
+
+</sqlMap>

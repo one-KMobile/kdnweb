@@ -1,0 +1,842 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="ExcelUpload">
+	
+	<typeAlias alias="totInsExcelVO" type="kdnmobile.excel.upd.service.TotInsExcelVO"/>
+	
+	<!-- ********************* 점검결과-통합점검이력 Start ********************* -->
+	
+	<!-- 점검결과-통합점검이력 여부 확인 카운트 -->
+	<select id="ExcelUploadDAO.getOverlapTotCnt" parameterClass="totInsExcelVO" resultClass="int">
+		SELECT 
+			COUNT(*) AS totcnt 
+		FROM EXCEL_CO_TOTINS_HIST_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no#)
+	</select>
+	
+	<!-- 점검결과-통합점검이력 저장 -->
+	<insert id="ExcelUploadDAO.insertInsTot" parameterClass="totInsExcelVO" >
+		INSERT INTO EXCEL_CO_TOTINS_HIST_T (
+				unity_ins_no <!--통합점검번호-->
+				<isNotEmpty property="ins_plan_no"><!--점검계획번호-->
+				,ins_plan_no 
+				</isNotEmpty>
+				<isNotEmpty property="fnct_eqp_no"><!--기능설비번호-->
+				,fnct_eqp_no 
+				</isNotEmpty>
+				<isNotEmpty property="ins_sn"><!--점검순번-->
+				,ins_sn 
+				</isNotEmpty>
+				<isNotEmpty property="fst_bizplc_cd"><!--1차사업소코드-->
+				,fst_bizplc_cd 
+				</isNotEmpty>
+				<isNotEmpty property="scd_bizplc_cd"><!--2차사업소코드-->
+				,scd_bizplc_cd 
+				</isNotEmpty>
+				<isNotEmpty property="thd_bizplc_cd"><!--3차사업소코드-->
+				,thd_bizplc_cd 
+				</isNotEmpty>
+				<isNotEmpty property="ins_ty_cd"><!--점검유형코드-->
+				,ins_ty_cd 
+				</isNotEmpty>
+				<isNotEmpty property="simplcty_inst_at"><!--간이점검표여부-->
+				,simplcty_inst_at 
+				</isNotEmpty>
+				<isNotEmpty property="ins_resn"><!--점검사유-->
+				,ins_resn 
+				</isNotEmpty>
+				<isNotEmpty property="ins_dt"><!--점검일자-->
+				,ins_dt 
+				</isNotEmpty>
+				<isNotEmpty property="strt_dtm"><!--출발일시-->
+				,strt_dtm 
+				</isNotEmpty>
+				<isNotEmpty property="arvl_dtm"><!--도착일시-->
+				,arvl_dtm 
+				</isNotEmpty>
+				<isNotEmpty property="strcfm_man"><!--출발확인자-->
+				,strcfm_man 
+				</isNotEmpty>
+				<isNotEmpty property="arvlcfm_man"><!--도착확인자-->
+				,arvlcfm_man 
+				</isNotEmpty>
+				<isNotEmpty property="insctr_1"><!--점검자1-->
+				,insctr_1 
+				</isNotEmpty>
+				<isNotEmpty property="insctr_2"><!--점검자2-->
+				,insctr_2 
+				</isNotEmpty>
+				<isNotEmpty property="insctr_user_ids_1"><!--점검자유저ids1-->
+				,insctr_user_ids_1 
+				</isNotEmpty>
+				<isNotEmpty property="insctr_user_ids_2"><!--점검자유저ids2-->
+				,insctr_user_ids_2 
+				</isNotEmpty>
+				<isNotEmpty property="ins_ccpy_nm"><!--점검협력사명-->
+				,ins_ccpy_nm 
+				</isNotEmpty>
+				<isNotEmpty property="detect_mthcd"><!--검출방법코드-->
+				,detect_mthcd 
+				</isNotEmpty>
+				<isNotEmpty property="begin_spot"><!--시작지점-->
+				,begin_spot 
+				</isNotEmpty>
+				<isNotEmpty property="end_spot"><!--종료지점-->
+				,end_spot 
+				</isNotEmpty>
+				<isNotEmpty property="weath"><!--날씨-->
+				,weath 
+				</isNotEmpty>
+				<isNotEmpty property="atemp"><!--온도-->
+				,atemp 
+				</isNotEmpty>
+				<isNotEmpty property="humid"><!--습도-->
+				,humid 
+				</isNotEmpty>
+				<isNotEmpty property="gnrlz_jdgmnt_gdbd"><!--종합판정양부-->
+				,gnrlz_jdgmnt_gdbd 
+				</isNotEmpty>
+				<isNotEmpty property="gnrlz_opnin"><!--종합의견-->
+				,gnrlz_opnin 
+				</isNotEmpty>
+				<isNotEmpty property="attfl_no"><!--첨부파일번호-->
+				,attfl_no 
+				</isNotEmpty>
+				<isNotEmpty property="aprv_no"><!--결재번호-->
+				,aprv_no 
+				</isNotEmpty>
+				<isNotEmpty property="imprmn_requst_no"><!--정비요청번호-->
+				,imprmn_requst_no 
+				</isNotEmpty>
+				<isNotEmpty property="crt_dtm"><!--등록일시-->
+				,crt_dtm 
+				</isNotEmpty>
+				<isNotEmpty property="crt_user"><!--등록자-->
+				,crt_user 
+				</isNotEmpty>
+				<isNotEmpty property="upd_dtm"><!--수정일시-->
+				,upd_dtm 
+				</isNotEmpty>
+				<isNotEmpty property="upd_user"><!--수정자-->
+				,upd_user 
+				</isNotEmpty>
+				<isNotEmpty property="unity_bizplc_cd"><!--통합사업소코드-->
+				,unity_bizplc_cd 
+				</isNotEmpty>
+				<isNotEmpty property="gubun">
+				,gubun 
+				</isNotEmpty>
+				<isNotEmpty property="tid">
+				,tid
+				</isNotEmpty>
+				<isNotEmpty property="junc_code">
+				,junc_code
+				</isNotEmpty>
+				<isNotEmpty property="objectid">
+				,objectid 
+				</isNotEmpty>
+				<isNotEmpty property="mangr_id"><!--감독자id-->
+				,mangr_id 
+				</isNotEmpty>
+		) VALUES (
+				to_number(#unity_ins_no#) <!--통합점검번호-->
+				<isNotEmpty property="ins_plan_no"><!--점검계획번호-->
+				,to_number(#ins_plan_no#) 
+				</isNotEmpty>
+				<isNotEmpty property="fnct_eqp_no"><!--기능설비번호-->
+				,#fnct_eqp_no# 
+				</isNotEmpty>
+				<isNotEmpty property="ins_sn"><!--점검순번-->
+				,to_number(#ins_sn#) 
+				</isNotEmpty>
+				<isNotEmpty property="fst_bizplc_cd"><!--1차사업소코드-->
+				,#fst_bizplc_cd# 
+				</isNotEmpty>
+				<isNotEmpty property="scd_bizplc_cd"><!--2차사업소코드-->
+				,#scd_bizplc_cd# 
+				</isNotEmpty>
+				<isNotEmpty property="thd_bizplc_cd"><!--3차사업소코드-->
+				,#thd_bizplc_cd# 
+				</isNotEmpty>
+				<isNotEmpty property="ins_ty_cd"><!--점검유형코드-->
+				,#ins_ty_cd# 
+				</isNotEmpty>
+				<isNotEmpty property="simplcty_inst_at"><!--간이점검표여부-->
+				,#simplcty_inst_at# 
+				</isNotEmpty>
+				<isNotEmpty property="ins_resn"><!--점검사유-->
+				,#ins_resn# 
+				</isNotEmpty>
+				<isNotEmpty property="ins_dt"><!--점검일자-->
+				,substr(replace(#ins_dt#, '-', ''), 1,8)
+				</isNotEmpty>
+				<isNotEmpty property="strt_dtm"><!--출발일시-->
+				,#strt_dtm# 
+				</isNotEmpty>
+				<isNotEmpty property="arvl_dtm"><!--도착일시-->
+				,#arvl_dtm# 
+				</isNotEmpty>
+				<isNotEmpty property="strcfm_man"><!--출발확인자-->
+				,#strcfm_man# 
+				</isNotEmpty>
+				<isNotEmpty property="arvlcfm_man"><!--도착확인자-->
+				,#arvlcfm_man# 
+				</isNotEmpty>
+				<isNotEmpty property="insctr_1"><!--점검자1-->
+				,#insctr_1# 
+				</isNotEmpty>
+				<isNotEmpty property="insctr_2"><!--점검자2-->
+				,#insctr_2# 
+				</isNotEmpty>
+				<isNotEmpty property="insctr_user_ids_1"><!--점검자유저ids1-->
+				,#insctr_user_ids_1# 
+				</isNotEmpty>
+				<isNotEmpty property="insctr_user_ids_2"><!--점검자유저ids2-->
+				,#insctr_user_ids_2# 
+				</isNotEmpty>
+				<isNotEmpty property="ins_ccpy_nm"><!--점검협력사명-->
+				,#ins_ccpy_nm# 
+				</isNotEmpty>
+				<isNotEmpty property="detect_mthcd"><!--검출방법코드-->
+				,#detect_mthcd# 
+				</isNotEmpty>
+				<isNotEmpty property="begin_spot"><!--시작지점-->
+				,#begin_spot# 
+				</isNotEmpty>
+				<isNotEmpty property="end_spot"><!--종료지점-->
+				,#end_spot# 
+				</isNotEmpty>
+				<isNotEmpty property="weath"><!--날씨-->
+				,#weath# 
+				</isNotEmpty>
+				<isNotEmpty property="atemp"><!--온도-->
+				,#atemp# 
+				</isNotEmpty>
+				<isNotEmpty property="humid"><!--습도-->
+				,#humid# 
+				</isNotEmpty>
+				<isNotEmpty property="gnrlz_jdgmnt_gdbd"><!--종합판정양부-->
+				,#gnrlz_jdgmnt_gdbd# 
+				</isNotEmpty>
+				<isNotEmpty property="gnrlz_opnin"><!--종합의견-->
+				,#gnrlz_opnin:NVARCHAR# 
+				</isNotEmpty>
+				<isNotEmpty property="attfl_no"><!--첨부파일번호-->
+				,#attfl_no# 
+				</isNotEmpty>
+				<isNotEmpty property="aprv_no"><!--결재번호-->
+				,#aprv_no# 
+				</isNotEmpty>
+				<isNotEmpty property="imprmn_requst_no"><!--정비요청번호-->
+				,to_number(#imprmn_requst_no#) 
+				</isNotEmpty>
+				<isNotEmpty property="crt_dtm"><!--등록일시-->
+				,#crt_dtm# 
+				</isNotEmpty>
+				<isNotEmpty property="crt_user"><!--등록자-->
+				,#crt_user# 
+				</isNotEmpty>
+				<isNotEmpty property="upd_dtm"><!--수정일시-->
+				,#upd_dtm# 
+				</isNotEmpty>
+				<isNotEmpty property="upd_user"><!--수정자-->
+				,#upd_user# 
+				</isNotEmpty>
+				<isNotEmpty property="unity_bizplc_cd"><!--통합사업소코드-->
+				,#unity_bizplc_cd# 
+				</isNotEmpty>
+				<isNotEmpty property="gubun">
+				,to_number(#gubun#) 
+				</isNotEmpty>
+				<isNotEmpty property="tid">
+				,#tid#
+				</isNotEmpty>
+				<isNotEmpty property="junc_code">
+				,#junc_code#
+				</isNotEmpty>
+				<isNotEmpty property="objectid">
+				,#objectid# 
+				</isNotEmpty>
+				<isNotEmpty property="mangr_id"><!--감독자id-->
+				,#mangr_id# 
+				</isNotEmpty>
+		)
+	</insert>
+	
+	<!-- 점검결과-통합점검이력 삭제 -->
+	<delete id="ExcelUploadDAO.deleteInsTot" parameterClass="totInsExcelVO">
+		DELETE FROM EXCEL_CO_TOTINS_HIST_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no#)
+	</delete>
+	
+	<!-- ********************* 점검결과-통합점검이력 End ********************* -->
+	
+	<!-- ********************* 보통순시 점검 결과 Start ********************* -->
+	
+	<!-- 보통순시 점검 결과 여부 확인 카운트 -->
+	<select id="ExcelUploadDAO.getOverlap001Cnt" parameterClass="totInsExcelVO" resultClass="int">
+		SELECT 
+			COUNT(*) AS totcnt 
+		FROM EXCEL_OT_NRM_INS_RLT_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no_001#)
+		AND EQP_NO = trim(#eqp_no_001#)
+	</select>
+	
+	<!-- 보통순시 점검 결과 저장 -->
+	<insert id="ExcelUploadDAO.insertIns001" parameterClass="totInsExcelVO">
+		INSERT INTO EXCEL_OT_NRM_INS_RLT_T (
+				UNITY_INS_NO <!-- 통합점검번호 -->
+				,EQP_NO		<!-- 설비번호 -->
+				,TINS_RESULT_SECD		<!-- 순시결과구분코드 -->
+				,EXAMIN_CN	<!-- 조사내용 -->
+				<isNotEmpty property="attfl_no_001"><!-- 첨부파일번호 -->
+				ATTFL_NO	
+				</isNotEmpty>
+				<isNotEmpty property="imprmn_requst_no_001"><!-- 정비요청번호 -->
+				,IMPRMN_REQUST_NO	
+				</isNotEmpty>
+				<isNotEmpty property="gubun_001">
+				,GUBUN
+				</isNotEmpty>
+				<isNotEmpty property="tid_001">
+				,TID
+				</isNotEmpty>
+		) VALUES (
+				to_number(#unity_ins_no_001#)
+				,#eqp_no_001#
+				,#tins_result_secd#
+				,#examin_cn#
+				<isNotEmpty property="attfl_no_001"><!-- 첨부파일번호 -->
+				,#attfl_no_001#
+				</isNotEmpty>
+				<isNotEmpty property="imprmn_requst_no_001"><!-- 정비요청번호 -->
+				,to_number(#imprmn_requst_no_001#)
+				</isNotEmpty>
+				<isNotEmpty property="gubun_001">
+				,to_number(#gubun_001#)
+				</isNotEmpty>
+				<isNotEmpty property="tid_001">
+				,#tid_001#
+				</isNotEmpty>
+		)
+	</insert>
+	
+	<!-- 보통순시 점검 결과 삭제 -->
+	<delete id="ExcelUploadDAO.deleteIns001" parameterClass="totInsExcelVO">
+		DELETE FROM EXCEL_OT_NRM_INS_RLT_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no_001#)
+		AND EQP_NO = trim(#eqp_no_001#)
+	</delete>
+	
+	<!-- ********************* 보통순시 점검 결과 End ********************* -->
+	
+	<!-- ********************* 항공장애등점검결과 Start ********************* -->
+	
+	<!-- 항공장애등점검결과 여부 확인 카운트 -->
+	<select id="ExcelUploadDAO.getOverlap024Cnt" parameterClass="totInsExcelVO" resultClass="int">
+		SELECT 
+			COUNT(*) AS totcnt 
+		FROM EXCEL_OT_FLGT_LMP_RLT_T
+		WHERE 1=1
+		AND UNITY_INS_NO = to_number(#unity_ins_no_024#)
+		AND EQP_NO = trim(#eqp_no_024#)
+		AND FLIGHT_LMP_KND = trim(#flight_lmp_knd#)
+		AND FLIGHT_LMP_NO = to_number(#flight_lmp_no#)
+	</select>
+	
+	<!-- 항공장애등점검결과 저장 -->
+	<insert id="ExcelUploadDAO.insertIns024" parameterClass="totInsExcelVO">
+		INSERT INTO EXCEL_OT_FLGT_LMP_RLT_T (
+			 UNITY_INS_NO		 				<!--통합점검번호-->
+			 <isNotEmpty property="imprmn_requst_no_024"><!--정비요청번호-->
+			 ,INT IMPRMN_REQUST_NO		    
+			 </isNotEmpty>
+			 ,EQP_NO		 				<!--설비번호-->         
+			 ,FLIGHT_LMP_KND 			<!--항공등종류-->   
+			 ,FLIGHT_LMP_NO  		<!--항공등번호-->  
+			 <isNotEmpty property="srcelct_knd"><!--전원종류-->
+			 ,SRCELCT_KND  			 			   
+			 </isNotEmpty>
+			 <isNotEmpty property="ctrl_ban_gdbd_secd"><!--제어반양부구분코드-->
+			 ,CTRL_BAN_GDBD_SECD  			
+			 </isNotEmpty>
+			 <isNotEmpty property="slrcl_gdbd_secd"><!--태양전지양부구분코드-->
+			 ,SLRCL_GDBD_SECD    				
+			 </isNotEmpty>
+			 <isNotEmpty property="srgbtry_gdbd_secd"><!--축전지양부구분코드-->
+			 ,SRGBTRY_GDBD_SECD  			
+			 </isNotEmpty>
+			 <isNotEmpty property="rgist_gu_gdbd_secd"><!--등기구양부구분코드-->
+			 ,RGIST_GU_GDBD_SECD			
+			 </isNotEmpty>
+			 <isNotEmpty property="cabl_gdbd_secd"><!--전선양부구분코드-->
+			 ,CABL_GDBD_SECD 					    
+			 </isNotEmpty>
+			 <isNotEmpty property="good_secd"><!--양호구분코드 -->    
+			 ,GOOD_SECD 							  
+			 </isNotEmpty>
+		) VALUES (
+			 to_number(#unity_ins_no_024#) 				<!--통합점검번호-->
+			 <isNotEmpty property="imprmn_requst_no_024"><!--정비요청번호-->
+			 ,to_number(#imprmn_requst_no_024#) 
+			 </isNotEmpty>
+			 ,#eqp_no_024# 						<!--설비번호-->         
+			 ,#flight_lmp_knd# 					<!--항공등종류-->
+			 ,to_number(#flight_lmp_no#)  	<!--항공등번호-->
+			 <isNotEmpty property="srcelct_knd"><!--전원종류-->  
+			 ,#srcelct_knd#   					    
+			 </isNotEmpty>
+			 <isNotEmpty property="ctrl_ban_gdbd_secd"><!--제어반양부구분코드-->
+			 ,#ctrl_ban_gdbd_secd#  			
+			 </isNotEmpty>
+			 <isNotEmpty property="slrcl_gdbd_secd"><!--태양전지양부구분코드-->
+			 ,#slrcl_gdbd_secd#    				
+			 </isNotEmpty>
+			 <isNotEmpty property="srgbtry_gdbd_secd"><!--축전지양부구분코드-->
+			 ,#srgbtry_gdbd_secd#  			
+			 </isNotEmpty>
+			 <isNotEmpty property="rgist_gu_gdbd_secd"><!--등기구양부구분코드-->
+			 ,#rgist_gu_gdbd_secd#			
+			 </isNotEmpty>
+			 <isNotEmpty property="cabl_gdbd_secd"><!--전선양부구분코드-->
+			 ,#cabl_gdbd_secd# 				
+			 </isNotEmpty>
+			 <isNotEmpty property="good_secd"><!--양호구분코드 -->      
+			 ,#good_secd# 						
+			 </isNotEmpty>
+		)
+	</insert>
+	
+	<!-- 항공장애등점검결과 삭제 -->
+	<delete id="ExcelUploadDAO.deleteIns024" parameterClass="totInsExcelVO">
+		DELETE FROM EXCEL_OT_FLGT_LMP_RLT_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no_024#)
+		AND EQP_NO = trim(#eqp_no_024#)
+		AND FLIGHT_LMP_KND = trim(#flight_lmp_knd#)
+		AND FLIGHT_LMP_NO = to_number(#flight_lmp_no#)
+	</delete>
+	
+	<!-- ********************* 항공장애등점검결과 End ********************* -->
+	
+	<!-- ********************* 항공장애등등구확인결과 Start ********************* -->
+	
+	<!-- 항공장애등등구확인결과 여부 확인 카운트 -->
+	<select id="ExcelUploadDAO.getOverlap025Cnt" parameterClass="totInsExcelVO" resultClass="int">
+		SELECT 
+			COUNT(*) AS totcnt 
+		FROM EXCEL_OT_FLTRB_LMP_RLT_T
+		WHERE 1=1
+		AND UNITY_INS_NO = to_number(#unity_ins_no_025#)
+		AND EQP_NO = trim(#eqp_no_025#)
+		AND FLIGHT_LMP_KND = trim(#flight_lmp_knd_025#)
+		AND FLIGHT_LMP_NO = to_number(#flight_lmp_no_025#)
+	</select>
+	
+	<!-- 항공장애등등구확인결과 저장 -->
+	<insert id="ExcelUploadDAO.insertIns025" parameterClass="totInsExcelVO">
+		INSERT INTO EXCEL_OT_FLTRB_LMP_RLT_T (
+			  UNITY_INS_NO					<!--통합점검번호-->
+			  <isNotEmpty property="imprmn_requst_no_025"><!--정비요청번호--> 
+			  ,IMPRMN_REQUST_NO		    
+			  </isNotEmpty>
+			  ,EQP_NO 							<!--설비번호-->         
+			  ,FLIGHT_LMP_KND	 			<!--항공등종류-->
+			  ,FLIGHT_LMP_NO 				<!--항공등번호-->
+			  <isNotEmpty property="srcelct_knd_025"><!--전원종류-->   
+			  ,SRCELCT_KND				 	
+			  </isNotEmpty>
+			  <isNotEmpty property="flck_co"><!--점멸횟수-->
+			  ,FLCK_CO  						
+			  </isNotEmpty>
+			  <isNotEmpty property="lightg_stadiv_cd"><!--점등상태구분코드-->
+			  ,LIGHTG_STADIV_CD 			
+			  </isNotEmpty>
+			  <isNotEmpty property="good_secd_025"><!--양호구분코드 -->
+			  ,GOOD_SECD  					
+			  </isNotEmpty>
+		) VALUES (
+			 to_number(#unity_ins_no_025#) <!--통합점검번호-->
+			 <isNotEmpty property="imprmn_requst_no_025"><!--정비요청번호-->
+			  ,to_number(#imprmn_requst_no_025#) 
+			  </isNotEmpty>
+			  ,#eqp_no_025# <!--설비번호-->         
+			  ,#flight_lmp_knd_025# <!--항공등종류-->
+			  ,to_number(#flight_lmp_no_025#) <!--항공등번호-->
+			  <isNotEmpty property="srcelct_knd_025"><!--전원종류-->
+			  ,#srcelct_knd_025#    
+			  </isNotEmpty>
+			  <isNotEmpty property="flck_co"><!--점멸횟수-->
+			  ,to_number(#flck_co#)  
+			  </isNotEmpty>
+			  <isNotEmpty property="lightg_stadiv_cd"><!--점등상태구분코드-->
+			  ,#lightg_stadiv_cd# 
+			  </isNotEmpty>
+			  <isNotEmpty property="good_secd_025"><!--양호구분코드 -->
+			  ,#good_secd_025#  
+			  </isNotEmpty>
+		)
+	</insert>
+	
+	<!-- 항공장애등등구확인결과 삭제 -->
+	<delete id="ExcelUploadDAO.deleteIns025" parameterClass="totInsExcelVO">
+		DELETE FROM EXCEL_OT_FLTRB_LMP_RLT_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no_025#)
+		AND EQP_NO = trim(#eqp_no_025#)
+		AND FLIGHT_LMP_KND = trim(#flight_lmp_knd_025#)
+		AND FLIGHT_LMP_NO = to_number(#flight_lmp_no_025#)
+	</delete>
+	
+	<!-- ********************* 항공장애등등구확인결과 End ********************* -->
+	
+	<!-- ********************* 기별점검 Start ********************* -->
+	
+	<!-- 기별점검 여부 확인 카운트 -->
+	<select id="ExcelUploadDAO.getOverlap021Cnt" parameterClass="totInsExcelVO" resultClass="int">
+		SELECT 
+			COUNT(*) AS totcnt 
+		FROM EXCEL_OT_INS_RLT_T
+		WHERE 1=1
+		AND UNITY_INS_NO = to_number(#unity_ins_no_021#)
+		AND EQP_NO = trim(#eqp_no_021#)
+		AND INS_ITM_CD = trim(#ins_itm_cd#)
+	</select>
+	
+	<!-- 기별점검 저장 -->
+	<insert id="ExcelUploadDAO.insertIns021" parameterClass="totInsExcelVO">
+		INSERT INTO EXCEL_OT_INS_RLT_T (
+			  UNITY_INS_NO					<!--통합점검번호-->
+			  <isNotEmpty property="imprmn_requst_no_021"><!--정비요청번호--> 
+			  ,IMPRMN_REQUST_NO		    
+			  </isNotEmpty>
+			  ,EQP_NO				<!--설비번호--> 
+			  ,INS_ITM_CD        <!-- 선로점검항목코드 -->
+			  <isNotEmpty property="good_secd_021"><!--양호구분코드 -->
+			  ,GOOD_SECD  					
+			  </isNotEmpty>
+		) VALUES (
+			 to_number(#unity_ins_no_021#) <!--통합점검번호-->
+			 <isNotEmpty property="imprmn_requst_no_021"><!--정비요청번호-->
+			  ,to_number(#imprmn_requst_no_021#) 
+			  </isNotEmpty>
+			  ,#eqp_no_021# 	<!--설비번호-->
+			  ,#ins_itm_cd# 		<!--선로점검항목코드-->     
+			  <isNotEmpty property="good_secd_021"><!--양호구분코드 -->
+			  ,trim(#good_secd_021#)  
+			  </isNotEmpty>
+		)
+	</insert>
+	
+	<!-- 기별점검 삭제 -->
+	<delete id="ExcelUploadDAO.deleteIns021" parameterClass="totInsExcelVO">
+		DELETE FROM EXCEL_OT_INS_RLT_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no_021#)
+		AND EQP_NO = trim(#eqp_no_021#)
+		AND INS_ITM_CD = trim(#ins_itm_cd#)
+	</delete>
+	
+	<!-- ********************* 기별점검 End ********************* -->
+	
+	<!-- ********************* 전선접속개소 Start ********************* -->
+	
+	<!-- 전선접속개소점검결과 여부 확인 카운트 -->
+	<select id="ExcelUploadDAO.getOverlap027RCnt" parameterClass="totInsExcelVO" resultClass="int">
+		SELECT 
+			COUNT(*) AS totcnt 
+		FROM EXCEL_OT_WIRJIN_PIN_RLT_T
+		WHERE 1=1
+		AND UNITY_INS_NO = to_number(#unity_ins_no_027#)
+		AND EQP_NO = trim(#eqp_no_027#)
+		AND PWLN_EQP_NO = trim(#pwln_eqp_no#)
+		AND CL_NO = trim(#cl_no#)
+	</select>
+	
+	<!-- 전선접속개소점검결과 저장 -->
+	<insert id="ExcelUploadDAO.insertIns027R" parameterClass="totInsExcelVO">
+		INSERT INTO EXCEL_OT_WIRJIN_PIN_RLT_T (
+			UNITY_INS_NO 
+			,EQP_NO 
+			,CL_NO 
+			,PWLN_EQP_NO
+			<isNotEmpty property="ttm_load"><!--당시부하-->
+			,TTM_LOAD
+			</isNotEmpty>
+			<isNotEmpty property="cndctr_co"><!--도체수-->
+			,CNDCTR_CO
+			</isNotEmpty>
+		) VALUES (
+			to_number(#unity_ins_no_027#)
+			,trim(#eqp_no_027#)
+			,trim(#cl_no#)
+			,trim(#pwln_eqp_no#)
+			<isNotEmpty property="ttm_load"><!--당시부하-->
+			,to_number(#ttm_load#)
+			</isNotEmpty>
+			<isNotEmpty property="cndctr_co"><!--도체수-->
+			,trim(#cndctr_co#)
+			</isNotEmpty>
+		)
+	</insert>
+	
+	<!-- 전선접속개소점검결과 삭제 -->
+	<delete id="ExcelUploadDAO.deleteIns027R" parameterClass="totInsExcelVO">
+		DELETE FROM EXCEL_OT_WIRJIN_PIN_RLT_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no_027#)
+		AND EQP_NO = trim(#eqp_no_027#)
+		AND PWLN_EQP_NO = trim(#pwln_eqp_no#)
+		AND CL_NO = trim(#cl_no#)
+	</delete>
+	
+	<!-- 전선접속개소점검결과 측정 여부 확인 카운트 -->
+	<select id="ExcelUploadDAO.getOverlap027Cnt" parameterClass="totInsExcelVO" resultClass="int">
+		SELECT 
+			COUNT(*) AS totcnt 
+		FROM EXCEL_OT_WIRJIN_PIN_RLT2_T
+		WHERE 1=1
+		AND UNITY_INS_NO = to_number(#unity_ins_no_027#)
+		AND EQP_NO = trim(#eqp_no_027#) 
+		AND CL_NO = trim(#cl_no#)
+		AND PWLN_EQP_NO = trim(#pwln_eqp_no#)
+		AND CNDCTR_SN = to_number(#cndctr_sn#)
+	</select>
+	
+	<!-- 전선접속개소점검결과 측정 저장 -->
+	<insert id="ExcelUploadDAO.insertIns027" parameterClass="totInsExcelVO">
+		INSERT INTO EXCEL_OT_WIRJIN_PIN_RLT2_T (
+			UNITY_INS_NO  	<!-- 통합점검번호 -->
+			,EQP_NO   			<!-- 설비번호 -->
+			,CL_NO  				<!-- 회선번호 -->
+			,PWLN_EQP_NO  	<!-- 전력선설비번호 -->
+			,CNDCTR_SN  		<!-- 도체순번 -->
+			<isNotEmpty property="imprmn_requst_no_027"><!--정비요청번호--> 
+			,IMPRMN_REQUST_NO		    
+			</isNotEmpty>
+			<isNotEmpty property="cabl_tp"><!-- 전선온도 -->
+			,CABL_TP
+			</isNotEmpty>
+			<isNotEmpty property="cnpt_tp"><!-- 접속점온도 -->			
+			,CNPT_TP		
+			</isNotEmpty>	
+			<isNotEmpty property="good_secd_027"><!--양호구분코드 -->
+			,GOOD_SECD	
+			</isNotEmpty>	
+		) VALUES (
+			to_number(#unity_ins_no_027#)
+			,trim(#eqp_no_027#)
+			,trim(#cl_no#)
+			,trim(#pwln_eqp_no#)
+			,to_number(#cndctr_sn#)
+			<isNotEmpty property="imprmn_requst_no_027"><!--정비요청번호--> 
+			,to_number(#imprmn_requst_no_027#)	    
+			</isNotEmpty>
+			<isNotEmpty property="cabl_tp"><!-- 전선온도 -->
+			,to_number(#cabl_tp#)
+			</isNotEmpty>
+			<isNotEmpty property="cnpt_tp"><!-- 접속점온도 -->			
+			,to_number(#cnpt_tp#)	
+			</isNotEmpty>	
+			<isNotEmpty property="good_secd_027"><!--양호구분코드 -->
+			,trim(#good_secd_027#)
+			</isNotEmpty>	
+		)
+	</insert>
+	
+	<!-- 전선접속개소점검결과 측정 삭제 -->
+	<delete id="ExcelUploadDAO.deleteIns027" parameterClass="totInsExcelVO">
+		DELETE FROM EXCEL_OT_WIRJIN_PIN_RLT2_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no_027#)
+		AND EQP_NO = trim(#eqp_no_027#) 
+		AND CL_NO = trim(#cl_no#)
+		AND PWLN_EQP_NO = trim(#pwln_eqp_no#)
+		AND CNDCTR_SN = to_number(#cndctr_sn#)
+	</delete>
+	
+	<!-- ********************* 전선접속개소 End ********************* -->
+	
+	<!-- ********************* 접지저항측정 Start ********************* -->
+	
+	<!-- 접지저항측정결과 여부 확인 카운트 -->
+	<select id="ExcelUploadDAO.getOverlap028RCnt" parameterClass="totInsExcelVO" resultClass="int">
+		SELECT 
+			COUNT(*) AS totcnt 
+		FROM EXCEL_OT_GRND_RS_RLT_T
+		WHERE 1=1
+		AND UNITY_INS_NO = to_number(#unity_ins_no_028#)
+		AND EQP_NO = trim(#eqp_no_028#)
+		AND MSR_CO = to_number(#msr_co#)
+	</select>
+	
+	<!-- 접지저항측정결과 저장 -->
+	<insert id="ExcelUploadDAO.insertIns028R" parameterClass="totInsExcelVO">
+	    INSERT INTO EXCEL_OT_GRND_RS_RLT_T (
+			  UNITY_INS_NO	<!--통합점검번호-->
+			  ,EQP_NO			<!--설비번호-->
+			  ,MSR_CO   		<!--측정횟수-->
+			  <isNotEmpty property="stdr_rs"><!-- 기준저항값 -->            
+			  ,STDR_RS          
+			  </isNotEmpty>
+			  <isNotEmpty property="good_secd_028"><!--양호구분코드 -->
+			  ,GOOD_SECD      
+			  </isNotEmpty>
+			  <isNotEmpty property="pmttr"><!--특이사항 -->
+			  ,PMTTR             
+			  </isNotEmpty>
+			  <isNotEmpty property="imprmn_requst_no_028"><!--정비요청번호-->         
+			  ,IMPRMN_REQUST_NO 
+			  </isNotEmpty>
+		) VALUES (
+			to_number(#unity_ins_no_028#) <!--통합점검번호 -->
+			,#eqp_no_028# 				<!--설비번호 -->
+			,to_number(#msr_co#) 		<!--측정횟수 -->
+			<isNotEmpty property="stdr_rs"><!-- 기준저항값 -->
+			,to_number(#stdr_rs#)
+			</isNotEmpty>
+			<isNotEmpty property="good_secd_028"><!--양호구분코드 -->
+			,trim(#good_secd_028#)
+			</isNotEmpty>
+			<isNotEmpty property="pmttr"><!--특이사항 -->
+			,#pmttr#
+			</isNotEmpty>
+			<isNotEmpty property="imprmn_requst_no_028"><!--정비요청번호 -->
+			,to_number(#imprmn_requst_no_028#)
+			</isNotEmpty>
+		)
+	</insert>
+	
+	<!-- 접지저항측정결과 삭제 -->
+	<delete id="ExcelUploadDAO.deleteIns028R" parameterClass="totInsExcelVO">
+		DELETE FROM EXCEL_OT_GRND_RS_RLT_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no_028#)
+		AND EQP_NO = trim(#eqp_no_028#)
+		AND MSR_CO = to_number(#msr_co#)
+	</delete>
+	
+	<!-- 접지저항측정차수 여부 확인 카운트 -->
+	<select id="ExcelUploadDAO.getOverlap028Cnt" parameterClass="totInsExcelVO" resultClass="int">
+		SELECT 
+			COUNT(*) AS totcnt 
+		FROM EXCEL_OT_GRND_RS_ODR_T
+		WHERE 1=1
+		AND UNITY_INS_NO = to_number(#unity_ins_no_028#)
+		AND EQP_NO = trim(#eqp_no_028#)
+		AND MSR_CO = to_number(#msr_co#)
+		AND MSR_ODR = to_number(#msr_odr#)
+	</select>
+	
+	<!-- 접지저항측정차수 저장 -->
+	<insert id="ExcelUploadDAO.insertIns028" parameterClass="totInsExcelVO">
+	    INSERT INTO EXCEL_OT_GRND_RS_ODR_T (
+			  UNITY_INS_NO	<!--통합점검번호-->
+			  ,EQP_NO			<!--설비번호-->
+			  ,MSR_CO   		<!--측정횟수-->
+			  ,MSR_ODR			<!-- 측정차수 -->
+			  <isNotEmpty property="msr_rs"><!-- 측정저항값 -->
+			  ,MSR_RS		
+			  </isNotEmpty>
+		) VALUES (
+			to_number(#unity_ins_no_028#) <!--통합점검번호 -->
+			,#eqp_no_028# 						<!--설비번호 -->
+			,to_number(#msr_co#) 				<!--측정횟수 -->
+			,to_number(#msr_odr#) 			<!--측정차수 -->
+			<isNotEmpty property="msr_rs"><!-- 측정저항값 -->
+			,to_number(#msr_rs#)
+			</isNotEmpty>
+		)
+	</insert>
+	
+	<!-- 접지저항측정차수 삭제 -->
+	<delete id="ExcelUploadDAO.deleteIns028" parameterClass="totInsExcelVO">
+		DELETE FROM EXCEL_OT_GRND_RS_ODR_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no_028#)
+		AND EQP_NO = trim(#eqp_no_028#)
+		AND MSR_CO = to_number(#msr_co#)
+		AND MSR_ODR = to_number(#msr_odr#)
+	</delete>
+	
+	<!-- ********************* 접지저항측정 End ********************* -->
+	
+	<!-- ********************* 불량애자검출결과 End ********************* -->
+	
+	<!-- 불량애자검출결과 여부 확인 카운트 -->
+	<select id="ExcelUploadDAO.getOverlap029Cnt" parameterClass="totInsExcelVO" resultClass="int">
+		SELECT 
+			COUNT(*) AS totcnt 
+		FROM EXCEL_OT_BDINR_RLT_T
+		WHERE 1=1
+		AND UNITY_INS_NO = to_number(#unity_ins_no_029#)
+		AND EQP_NO = trim(#eqp_no_029#)
+		AND CL_NO = trim(#cl_no_029#)
+		AND TY_SECD = trim(#ty_secd#)
+		AND PHS_SECD = trim(#phs_secd#)
+		AND INSR_EQP_NO = trim(#insr_eqp_no#)
+		
+	</select>
+	
+	<!-- 불량애자검출결과 저장 -->
+	<insert id="ExcelUploadDAO.insertIns029" parameterClass="totInsExcelVO">
+		INSERT INTO EXCEL_OT_BDINR_RLT_T (
+			  UNITY_INS_NO					<!--통합점검번호-->
+			  <isNotEmpty property="imprmn_requst_no_029"><!--정비요청번호--> 
+			  ,IMPRMN_REQUST_NO		    
+			  </isNotEmpty>
+			  ,EQP_NO				<!--설비번호-->
+			  ,CL_NO					<!-- 회선번호 -->
+			  ,TY_SECD				<!-- 유형구분코드 -->
+			  ,PHS_SECD			<!-- 상구분코드 -->
+			  ,INSR_EQP_NO		<!-- 애자설비번호 -->
+			  <isNotEmpty property="insbty_lft"><!-- 애자련형좌 -->
+			  ,INSBTY_LFT	
+			  </isNotEmpty>
+			  <isNotEmpty property="insbty_rit"><!-- 애자련형우 -->
+			  ,INSBTY_RIT	
+			  </isNotEmpty>
+			  <isNotEmpty property="insr_qy"><!-- 애자수량 -->
+			  ,INSR_QY		
+			  </isNotEmpty>
+			  <isNotEmpty property="bad_insr_qy"><!-- 불량애자수량 -->
+			  ,BAD_INSR_QY
+			  </isNotEmpty>
+			  <isNotEmpty property="good_secd_029"><!--양호구분코드 -->
+			  ,GOOD_SECD  					
+			  </isNotEmpty>
+		) VALUES (
+			 to_number(#unity_ins_no_029#) <!--통합점검번호-->
+			 <isNotEmpty property="imprmn_requst_no_029"><!--정비요청번호-->
+			  ,to_number(#imprmn_requst_no_029#) 
+			  </isNotEmpty>
+			  ,#eqp_no_029# 	<!--설비번호-->
+			  ,#cl_no_029#		<!-- 회선번호 -->	
+			  ,#ty_secd#			<!-- 유형구분코드 -->
+			  ,#phs_secd#			<!-- 상구분코드 -->
+			  ,#insr_eqp_no#		<!-- 애자설비번호 -->
+			  <isNotEmpty property="insbty_lft"><!-- 애자련형좌 -->
+			  ,#insbty_lft#			
+			  </isNotEmpty>
+			  <isNotEmpty property="insbty_rit"><!-- 애자련형우 -->
+			  ,#insbty_rit#			
+			  </isNotEmpty>
+			  <isNotEmpty property="insr_qy"><!-- 애자수량 -->
+			  ,to_number(#insr_qy#)				
+			  </isNotEmpty>
+			  <isNotEmpty property="bad_insr_qy"><!-- 불량애자수량 -->
+			  ,to_number(#bad_insr_qy#)		
+			  </isNotEmpty>
+			  <isNotEmpty property="good_secd_029"><!--양호구분코드 -->
+			  ,trim(#good_secd_029#)  
+			  </isNotEmpty>
+		)
+	</insert>
+	
+	<!-- 불량애자검출결과 삭제 -->
+	<delete id="ExcelUploadDAO.deleteIns029" parameterClass="totInsExcelVO">
+		DELETE FROM EXCEL_OT_BDINR_RLT_T
+		WHERE UNITY_INS_NO = to_number(#unity_ins_no_029#) 
+		AND EQP_NO = trim(#eqp_no_029#)
+		AND CL_NO = trim(#cl_no_029#)
+		AND TY_SECD = trim(#ty_secd#)
+		AND PHS_SECD = trim(#phs_secd#)
+		AND INSR_EQP_NO = trim(#insr_eqp_no#)
+	</delete>
+	<!-- ********************* 불량애자검출결과 End ********************* -->
+
+</sqlMap>
