@@ -92,6 +92,7 @@ public class KdnApiMethod {
 		box.put("fst_bizplc_cd", loginMethod.getSessionKey(request).getString("fst_bizplc_cd"));
      	box.put("scd_bizplc_cd", loginMethod.getSessionKey(request).getString("scd_bizplc_cd"));
 
+     	System.out.println("################# cycle_ym ################# "+box.getString("cycle_ym"));
      	//날짜 계산
      	if("".equals(box.getString("cycle_ym"))) {
      		Calendar cal = Calendar.getInstance();
@@ -102,6 +103,8 @@ public class KdnApiMethod {
      		box.put("start_date", box.getString("cycle_ym"));
      		box.put("end_date", box.getString("cycle_ym"));
      	}
+     	System.out.println("################# start_date ################# "+box.getString("start_date"));
+     	System.out.println("################# end_date ################# "+box.getString("end_date"));
      	//선로의 의한 스케줄정보 호출
      	List<Box> scheduleList = kdnApiService.getTracksInSchedule(box);
      	/*for(int i=0; i<scheduleList.size(); i++) {

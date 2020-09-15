@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
-
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
 <sqlMap namespace="KdnApi">
 	
 	<typeAlias alias="box" type="kdn.cmm.box.Box"/>
@@ -106,7 +105,7 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
 		SELECT fnct_lc_no 
 					, fnct_lc_dtls 
 		FROM op_function_header_t
-		WHERE fnct_lc_ty = 'FL05'
+		WHERE fnct_lc_ty in ('FL05','FL06','FL07','FL08','FL09')
         AND fnct_lc_sttus = 'I'
 		AND fst_bizplc_cd = #fst_bizplc_cd# 
 		AND scd_bizplc_cd = #scd_bizplc_cd#
@@ -253,11 +252,12 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
                                                           , BB.FNCT_EQP_NO AS FNCT_LC_NO
                                                           , BB.INS_SN
                                                           , BB.UNITY_INS_NO
-                                                          , REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(DD.CODE_NAME,'항공장애등등구확인점검','장애등등구'),'항공장애등점검','장애등'),'전선접속개소점검','전선접속개소'),'접지저항측정','접지저항'),'불량애자검출','불량애자') NM
+                                                          <!-- , REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(DD.CODE_NAME,'항공장애등등구확인점검','장애등등구'),'항공장애등점검','장애등'),'전선접속개소점검','전선접속개소'),'접지저항측정','접지저항'),'불량애자검출','불량애자') NM-->
+                                                          ,DD.CODE_NAME NM
                                                 FROM CO_INSPLAN_T AA INNER JOIN CO_INSPLAN_EQP_T BB ON AA.INS_PLAN_NO = BB.INS_PLAN_NO      
-                                                AND BB.EQP_TY_CD = 'T001'
+                                                <!--AND BB.EQP_TY_CD = 'T001'-->
                                                 AND BB.CYCLE_YM BETWEEN #start_date# AND #end_date# 
-                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TYPE' AND DD.CODE_ID = BB.INS_TY_CD 
+                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TY_CD' AND DD.CODE_ID = BB.INS_TY_CD 
                                                 WHERE AA.INS_PLAN_NO IN (SELECT MAX(INS_PLAN_NO) 
                                                                                         FROM CO_INSPLAN_T CC 
                                                                                           WHERE AA.INS_PLAN_NO = CC.INS_PLAN_NO 
@@ -273,12 +273,12 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
                                                                 , BB.FNCT_EQP_NO AS FNCT_LC_NO
                                                                 , BB.INS_SN
                                                                 , BB.UNITY_INS_NO
-                                                                , REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(DD.CODE_NAME,'항공장애등등구확인점검','장애등등구'),'항공장애등점검','장애등'),'전선접속개소점검','전선접속개소'),'접지저항측정','접지저항'),'불량애자검출','불량애자
-') NM
+                                                                <!-- , REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(DD.CODE_NAME,'항공장애등등구확인점검','장애등등구'),'항공장애등점검','장애등'),'전선접속개소점검','전선접속개소'),'접지저항측정','접지저항'),'불량애자검출','불량애자') NM-->
+                                                          		,DD.CODE_NAME NM
                                                 FROM CO_INSPLAN_T AA INNER JOIN CO_INSPLAN_EQP_T BB ON AA.INS_PLAN_NO = BB.INS_PLAN_NO      
-                                                AND BB.EQP_TY_CD = 'T001'
+                                                <!--AND BB.EQP_TY_CD = 'T001'-->
                                                 AND BB.CYCLE_YM BETWEEN #start_date# AND #end_date# 
-                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TYPE' AND DD.CODE_ID = BB.INS_TY_CD 
+                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TY_CD' AND DD.CODE_ID = BB.INS_TY_CD 
                                                 WHERE AA.INS_PLAN_NO IN ( SELECT MAX(INS_PLAN_NO) 
                                                                                         FROM CO_INSPLAN_T CC 
                                                                                           WHERE AA.INS_PLAN_NO = CC.INS_PLAN_NO 
@@ -292,7 +292,7 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
                                                                 )
                                                   ) INSPLAN INNER JOIN op_function_header_t TRACKS ON INSPLAN.FNCT_LC_NO = TRACKS.FNCT_LC_NO  
                                                       INNER JOIN op_eqp_header_t TOWER ON TRACKS.FNCT_LC_NO = TOWER.FNCT_LC_NO 
-                                                      AND TOWER.EQP_TY_CD = 'T001' 
+                                                      <!--AND TOWER.EQP_TY_CD = 'T001' -->
                                                       AND TOWER.FST_BIZPLC_CD =  #fst_bizplc_cd#
                                                       AND TOWER.SCD_BIZPLC_CD =  #scd_bizplc_cd#
                                     ) TT
@@ -303,15 +303,15 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
 	
 <!-- 회선 테이블 검색 	 -->
 	<select id="schedule.getCircuitList" parameterClass="box" resultClass="box">
-		SELECT * FROM m_circuit_t <!-- ORDER BY TO_NUMBER(tower_idx), fnct_lc_dtls, sn -->
-		<!-- SELECT EQP_NO
+		<!-- SELECT * FROM m_circuit_t --><!-- ORDER BY TO_NUMBER(tower_idx), fnct_lc_dtls, sn -->
+		SELECT EQP_NO
 				, EQP_NM
 				, FNCT_LC_NO
 				, FNCT_LC_DTLS
 				, TOWER_IDX
 				, 0 TTM_LOAD
 				, CONT_NUM
-				, SN 
+				<!-- , SN  -->
 				, MAX(DECODE(SEQ,1,NEW_POWER_NO)) POWER_NO_C1
 				, MAX(DECODE(SEQ,2,NEW_POWER_NO)) POWER_NO_C2
 				, MAX(DECODE(SEQ,3,NEW_POWER_NO)) POWER_NO_C3 
@@ -342,11 +342,11 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
 						, FNCT_LC_DTLS
 						, TOWER_IDX
 						, CASE WHEN CONT_NUM = 'B001' THEN 'S' WHEN CONT_NUM = 'B002' THEN '2B' WHEN CONT_NUM = 'B003' THEN '4B' WHEN CONT_NUM = 'B005' THEN '6B' ELSE 'ERROR' END CONT_NUM 
-								, SANG||'_'||POWER_NO NEW_POWER_NO 
+								<!--, SANG||'_'||POWER_NO NEW_POWER_NO -->
 						, POWER_NO NEW_POWER_NO 
 						FROM ( SELECT TOWER.EQP_NO
 								, TOWER.EQP_NM
-								, TOWER_B.FNCT_LC_NO 회선코드
+								, TOWER_B.FNCT_LC_NO <!--회선코드-->
 		  						, TRACKS.FNCT_LC_DTLS
 		  						, TOWER_B.EQP_NO POWER_NO
 		  						, TOWER.TOWER_IDX 
@@ -371,7 +371,7 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
 																											) TOWER ON TOWER.EQP_NO = ITEM_B.CHARTR_VALUE INNER JOIN OP_FUNCTION_HEADER_T TRACKS ON TRACKS.FNCT_LC_NO = TOWER_B.FNCT_LC_NO 
 																												AND TRACKS.FNCT_LC_TY = 'FL06' 
 																												AND TRACKS.FNCT_LC_STTUS = 'I' 
-																												WHERE TOWER_B.EQP_TY_CD = 'T004' 
+																												WHERE 1=1<!--TOWER_B.EQP_TY_CD = 'T004'--> 
 																												AND TOWER_B.EQP_STTUS = 'I' 
 									) AAAA 
 						) BBBB INNER JOIN (
@@ -385,8 +385,8 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
 												) CCCC ON 1 = 1 
 						) DDDD 
 						WHERE SN IS NOT NULL 
-						GROUP BY EQP_NO, EQP_NM, FNCT_LC_NO, FNCT_LC_DTLS, TOWER_IDX, CONT_NUM, SN 
-						ORDER BY TO_NUMBER(TOWER_IDX), FNCT_LC_DTLS, SN -->
+						GROUP BY EQP_NO, EQP_NM, FNCT_LC_NO, FNCT_LC_DTLS, TOWER_IDX, CONT_NUM<!-- , SN  -->
+						ORDER BY TO_NUMBER(TOWER_IDX), FNCT_LC_DTLS<!-- , SN  -->
 	</select>
 	
 <!-- 불량애자 검색 -->
@@ -566,8 +566,8 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
 	
 <!-- 지지물 검색 -->
 	<select id="getSearchedTransTower" parameterClass="box" resultClass="box">
-		SELECT * FROM m_tower_t order by to_number(tower_idx)
-		<!-- SELECT TRACKS.FNCT_LC_DTLS
+		<!-- SELECT * FROM m_tower_t order by to_number(tower_idx)-->
+		SELECT TRACKS.FNCT_LC_DTLS
 				, TOWER.FNCT_LC_NO
 				, (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0002') AS TOWER_IDX
 		  		, TOWER.EQP_NO
@@ -582,7 +582,7 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
 		WHERE TOWER.EQP_TY_CD = 'T001' 
 		AND TOWER.EQP_STTUS = 'I'
 		AND TRACKS.FNCT_LC_NO IN ($fnct_lc_no$) 
-		ORDER BY TO_NUMBER(TOWER_IDX) -->
+		ORDER BY TO_NUMBER(TOWER_IDX) 
 <!-- 		SELECT
 	        * 
 	    FROM

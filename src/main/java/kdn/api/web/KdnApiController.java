@@ -331,6 +331,7 @@ public class KdnApiController {
             		resultScheduleList = kdnApiMethod.getScheduleMethod(box, request);
             	}else {
             		String insPlanNo = kdnApiService.getLatestContract(box).getString("INS_PLAN_NO"); //최신스케줄20140300000000000293
+                 	//System.out.println("################# insPlanNo ################# "+insPlanNo);
             		if(!box.getString("insplan_no").equals(insPlanNo)) { // 박스 20140300000000000226
             			//스케쥴 처리
             			resultScheduleList = kdnApiMethod.getScheduleMethod(box, request);
@@ -338,7 +339,8 @@ public class KdnApiController {
             	}
             	
              	modelAndView.addObject("schedule", resultScheduleList);
-             	modelAndView.addObject("planno", "20140300000000000226");
+             	//modelAndView.addObject("planno", "20140300000000000226");
+             	//System.out.println("################# one test ################# "+resultScheduleList);
              	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_SUCCESS);
              	return modelAndView;
              }catch(Exception e) {
@@ -372,8 +374,12 @@ public class KdnApiController {
              		return modelAndView;
              	}*/
             	 
-             	box.put("fst_bizplc_cd", loginMethod.getSessionKey(request).getString("fst_bizplc_cd"));
-             	box.put("scd_bizplc_cd", loginMethod.getSessionKey(request).getString("scd_bizplc_cd"));
+             	//box.put("fst_bizplc_cd", loginMethod.getSessionKey(request).getString("fst_bizplc_cd"));
+             	//box.put("scd_bizplc_cd", loginMethod.getSessionKey(request).getString("scd_bizplc_cd"));
+            	Box sessionBox = loginMethod.getSessionKey(request);
+            	box.put("fst_bizplc_cd", sessionBox.getString("fst_bizplc_cd"));
+            	box.put("scd_bizplc_cd", sessionBox.getString("scd_bizplc_cd"));
+                //System.out.println("############fnct_lc_no2############## "+sessionBox.getString("fst_bizplc_cd"));
              	
              	//전선접속개소, 접지저항일 경우
              	List<Box> list = kdnApiService.getCircuitList(box);
@@ -534,10 +540,12 @@ public class KdnApiController {
               		modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL_SESSION);
               		return modelAndView;
               	}*/
-            	Box sessionBox = loginMethod.getSessionKey(request);
+            	//Box sessionBox = loginMethod.getSessionKey(request);
             	box.put("fnct_lc_ty_nm", "가공선로 기능위치");
-            	box.put("fst_bizplc_cd", sessionBox.getString("fst_bizplc_cd"));
-            	box.put("scd_bizplc_cd", sessionBox.getString("scd_bizplc_cd"));
+            	//box.put("fst_bizplc_cd", sessionBox.getString("fst_bizplc_cd"));
+            	//box.put("scd_bizplc_cd", sessionBox.getString("scd_bizplc_cd"));
+            	box.put("fst_bizplc_cd", loginMethod.getSessionKey(request).getString("fst_bizplc_cd"));
+            	box.put("scd_bizplc_cd", loginMethod.getSessionKey(request).getString("scd_bizplc_cd"));
               	List<Box> tracksList = kdnApiService.getTracksList(box);
               	StringBuffer sb = new StringBuffer();
               	sb.append("'");
@@ -545,7 +553,6 @@ public class KdnApiController {
             		Box tracksBox = tracksList.get(i);
             		sb.append(tracksBox.getString("FNCT_LC_NO")).append("','");
             	}
-              	
               	String trackAllList = sb.substring(0, sb.length()-2);
               	if("".equals(box.getString("fnct_lc_no"))) {
               		box.put("fnct_lc_no", trackAllList);
@@ -553,7 +560,7 @@ public class KdnApiController {
               		box.put("fnct_lc_no", "'".concat(box.getString("fnct_lc_no")).concat("'"));
               	}
               	List<Box> searchedTransTower = kdnApiService.getSearchedTransTower(box);
-              	System.out.println("리스트 튜플수 : " + searchedTransTower.size());
+              	//System.out.println("리스트 튜플수 : " + searchedTransTower.size());
 
               	modelAndView.addObject("searchedTransTower", searchedTransTower);
               	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_SUCCESS);
@@ -593,16 +600,16 @@ public class KdnApiController {
 	               			towerIdxBox.put("latitude", latitude);
 	               			towerIdxBox.put("longitude", longitude);
 	               			kdnApiService.setLatitudeWithLongitudeUpdate(towerIdxBox);
-	               			System.out.println("10 la: " + towerIdxBox.getString("latitude"));
-	               			System.out.println("10 lo: " + towerIdxBox.getString("longitude"));
+	               			//System.out.println("10 la: " + towerIdxBox.getString("latitude"));
+	               			//System.out.println("10 lo: " + towerIdxBox.getString("longitude"));
                			}else if (i < box.getInt("offset") + 20) {
                				latitude = latitude + 0.003000;
                				longitude = longitude + 0.003000;
                				towerIdxBox.put("latitude", latitude);
                    			towerIdxBox.put("longitude", longitude);
                    			kdnApiService.setLatitudeWithLongitudeUpdate(towerIdxBox);
-                   			System.out.println("20 la: " + towerIdxBox.getString("latitude"));
-	               			System.out.println("20 lo: " + towerIdxBox.getString("longitude"));
+                   			//System.out.println("20 la: " + towerIdxBox.getString("latitude"));
+	               			//System.out.println("20 lo: " + towerIdxBox.getString("longitude"));
                			}else if (i <box.getInt("offset") + 30) {
                				if(i == box.getInt("offset") + 20) {
                					latitude = box.getDouble("latitude");
@@ -612,8 +619,8 @@ public class KdnApiController {
 	               			towerIdxBox.put("latitude", latitude);
 	               			towerIdxBox.put("longitude", box.getString("longitude"));
 	               			kdnApiService.setLatitudeWithLongitudeUpdate(towerIdxBox);
-	               			System.out.println("30 la: " + towerIdxBox.getString("latitude"));
-	               			System.out.println("30 lo: " + towerIdxBox.getString("longitude"));
+	               			//System.out.println("30 la: " + towerIdxBox.getString("latitude"));
+	               			//System.out.println("30 lo: " + towerIdxBox.getString("longitude"));
                			}else {
                				if(i==box.getInt("offset") + 30) {
                					longitude = box.getDouble("longitude");
@@ -624,8 +631,8 @@ public class KdnApiController {
 	               			towerIdxBox.put("latitude", box.getString("latitude"));
 	               			towerIdxBox.put("longitude", longitude);
 	               			kdnApiService.setLatitudeWithLongitudeUpdate(towerIdxBox);
-	               			System.out.println("40 la: " + towerIdxBox.getString("latitude"));
-	               			System.out.println("40 lo: " + towerIdxBox.getString("longitude"));
+	               			//System.out.println("40 la: " + towerIdxBox.getString("latitude"));
+	               			//System.out.println("40 lo: " + towerIdxBox.getString("longitude"));
                			}/*else if(i < 50) {
                				latitude = latitude + 0.0000300;
                				longitude = longitude + 0.0000300;
@@ -962,7 +969,7 @@ public class KdnApiController {
             			
             		}
             		cnt = cnt + 1;
-                	System.out.println("!!!!!!!!!!!!!!!!!!!" + cnt);
+                	//System.out.println("!!!!!!!!!!!!!!!!!!!" + cnt);
                 	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_SUCCESS);
                 	return modelAndView;
                 }catch(Exception e) {
@@ -1117,7 +1124,7 @@ public class KdnApiController {
             			
             		}
                 	cnt = cnt + 1;
-                	System.out.println("!!!!!!!!!!!!!!!!!!!" + cnt);
+                	//System.out.println("!!!!!!!!!!!!!!!!!!!" + cnt);
                 	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_SUCCESS);
                 	return modelAndView;
                 }catch(Exception e) {
@@ -1521,7 +1528,7 @@ public class KdnApiController {
                 	//복호화
                 	box = Cipher.getDecryptBox(box);
                 	box.remove("master_key");
-                	System.out.println("eqp_no 확인 : " + box.getString("eqp_no"));
+                	//System.out.println("eqp_no 확인 : " + box.getString("eqp_no"));
                 	String user_id = box.getString("reg_id");
                 	String group_file_id = user_id.concat("_").concat(box.getString("eqp_no"));
                 	//파일생성
