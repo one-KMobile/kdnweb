@@ -101,15 +101,15 @@ public interface KdnApiService {
      	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
      	 */       
        List<Box> getTracksInSchedule(Box box) throws Exception;
-       
-       /**
-     	 * 회선 테이블 검색(전선접속개소, 접지저항)
-     	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
-     	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
-     	 * @author [정현도] 
-     	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
-     	 */  
-     	List<Box> getCircuitList(Box box) throws Exception;
+        
+        /**
+      	 * 회선 테이블 검색(전선접속개소, 접지저항)
+      	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
+      	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+      	 * @author [정현도] 
+      	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+      	 */  
+      	List<Box> getCircuitList(Box box) throws Exception;
      	
         /**
     	 * 불량애자 검색
@@ -880,4 +880,24 @@ public interface KdnApiService {
     	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
     	 */ 
         int setAddress(Box box) throws Exception;
+
+        /**
+      	 * < 지중순시 모바일 시스템 > 정기순시/예방순시 - 유압리스트 추출
+      	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
+      	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+      	 * @author [정현도] 
+      	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+      	 */  
+        
+      	List<Box> getOileqpList(Box box) throws Exception;
+
+        /**
+      	 * < 지중순시 모바일 시스템 > 설비검색
+      	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
+      	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+      	 * @author [정현도] 
+      	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+      	 */  
+        
+      	List<Box> apiSearchFacilityList(Box box) throws Exception;
 }

@@ -393,7 +393,6 @@ public class KdnApiController {
              	return modelAndView;
              }
          }
-         
          /**
       	 * 불량애자 호출
       	 * @param - box[]
@@ -1894,4 +1893,91 @@ public class KdnApiController {
                 }
                 
             }
+            /**
+          	 * < 지중순시 모바일 시스템 > 설비검색
+          	 * @param - box[fnct_lc_no, eqp_nm] 
+          	 * @return int - [항공쟁애점등점검 등록]
+          	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+          	 * @author [정현도] 
+          	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+          	 * @exception api검토
+          	 */
+              @RequestMapping(value="/api/search/facility/eqplist.*", method={RequestMethod.POST,RequestMethod.GET})
+              public ModelAndView apiSearchFacilityList(ModelMap model, HttpServletRequest request) {
+              	ModelAndView modelAndView = new ModelAndView(new MappingJacksonJsonView());
+                  Box box = BoxUtil.getBox(request);
+                  /*if("".equals(box.getString("fnct_lc_no"))) {
+                	  modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL_REQUIRE);
+                	  return modelAndView;
+                  }*/
+                  
+                  try {
+                  	/*if(!loginMethod.isExistSessionKey(request)) {
+                  		modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL_SESSION);
+                  		return modelAndView;
+                  	}*/
+                	//Box sessionBox = loginMethod.getSessionKey(request);
+                   	Box sessionBox = loginMethod.getSessionKey(request);
+                   	box.put("fst_bizplc_cd", sessionBox.getString("fst_bizplc_cd"));
+                   	box.put("scd_bizplc_cd", sessionBox.getString("scd_bizplc_cd"));
+                    System.out.println("############ eqplist ############## "+sessionBox.getString("fst_bizplc_cd"));
+                    	
+                    List<Box> list = kdnApiService.apiSearchFacilityList(box);
+                    	
+                    //modelAndView.addObject("result", list);
+                    modelAndView.addObject("searchedTransTower", list);
+                    System.out.println("############ list ############## "+list.size());
+                    modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_SUCCESS);
+                  	return modelAndView;
+                  }catch(Exception e) {
+                  	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL);
+                  	return modelAndView;
+                  }
+              }
+
+              
+              /**
+          	 * < 지중순시 모바일 시스템 > 정기순시/예방순시 - 유압리스트 호출
+          	 * @param - box[]
+          	 * @return list - [스케줄 결과검색]
+          	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+          	 * @author [정현도] 
+          	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+          	 * @exception api검토
+          	 */
+              @RequestMapping(value="/api/oileqp/in/schedule.*", method={RequestMethod.POST,RequestMethod.GET})
+              public ModelAndView apiOileqpInSchedule(ModelMap model, HttpServletRequest request) {
+              	ModelAndView modelAndView = new ModelAndView(new MappingJacksonJsonView());
+                  Box box = BoxUtil.getBox(request);
+                  
+                  /*if("".equals(box.getString("fnct_lc_no"))) {
+                  	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL_REQUIRE);
+                  	return modelAndView;
+                  }*/
+                  try {
+                  	/*if(!loginMethod.isExistSessionKey(request)) {
+                  		modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL_SESSION);
+                  		return modelAndView;
+                  	}*/
+                 	 
+                  	//box.put("fst_bizplc_cd", loginMethod.getSessionKey(request).getString("fst_bizplc_cd"));
+                  	//box.put("scd_bizplc_cd", loginMethod.getSessionKey(request).getString("scd_bizplc_cd"));
+                 	Box sessionBox = loginMethod.getSessionKey(request);
+                 	box.put("fst_bizplc_cd", sessionBox.getString("fst_bizplc_cd"));
+                 	box.put("scd_bizplc_cd", sessionBox.getString("scd_bizplc_cd"));
+                     System.out.println("############ oileqp/in ############## "+sessionBox.getString("fst_bizplc_cd"));
+                  	
+                  	List<Box> list = kdnApiService.getOileqpList(box);
+                  	
+                  	modelAndView.addObject("result", list);
+                  	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_SUCCESS);
+                  	return modelAndView;
+                  }catch(Exception e) {
+                  	e.printStackTrace();
+                  	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL);
+                  	return modelAndView;
+                  }
+              }
+              
+              
 }

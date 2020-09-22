@@ -248,7 +248,7 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
                                                 , TOWER.ADDRESS 
                                       FROM (SELECT AA.INS_PLAN_NO
                                                           , BB.CYCLE_YM
-                                                          , BB.INS_TY_CD
+                                                          , decode(BB.INS_TY_CD, '039','001','040','003',BB.INS_TY_CD) INS_TY_CD
                                                           , BB.FNCT_EQP_NO AS FNCT_LC_NO
                                                           , BB.INS_SN
                                                           , BB.UNITY_INS_NO
@@ -257,7 +257,7 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
                                                 FROM CO_INSPLAN_T AA INNER JOIN CO_INSPLAN_EQP_T BB ON AA.INS_PLAN_NO = BB.INS_PLAN_NO      
                                                 <!--AND BB.EQP_TY_CD = 'T001'-->
                                                 AND BB.CYCLE_YM BETWEEN #start_date# AND #end_date# 
-                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TY_CD' AND DD.CODE_ID = BB.INS_TY_CD 
+                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TYPE' AND DD.CODE_ID = BB.INS_TY_CD 
                                                 WHERE AA.INS_PLAN_NO IN (SELECT MAX(INS_PLAN_NO) 
                                                                                         FROM CO_INSPLAN_T CC 
                                                                                           WHERE AA.INS_PLAN_NO = CC.INS_PLAN_NO 
@@ -269,7 +269,7 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
                                 
                                                     SELECT AA.INS_PLAN_NO
                                                                 , BB.CYCLE_YM
-                                                                , BB.INS_TY_CD
+                                                                , decode(BB.INS_TY_CD, '039','001','040','003',BB.INS_TY_CD) INS_TY_CD
                                                                 , BB.FNCT_EQP_NO AS FNCT_LC_NO
                                                                 , BB.INS_SN
                                                                 , BB.UNITY_INS_NO
@@ -278,7 +278,7 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
                                                 FROM CO_INSPLAN_T AA INNER JOIN CO_INSPLAN_EQP_T BB ON AA.INS_PLAN_NO = BB.INS_PLAN_NO      
                                                 <!--AND BB.EQP_TY_CD = 'T001'-->
                                                 AND BB.CYCLE_YM BETWEEN #start_date# AND #end_date# 
-                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TY_CD' AND DD.CODE_ID = BB.INS_TY_CD 
+                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TYPE' AND DD.CODE_ID = BB.INS_TY_CD 
                                                 WHERE AA.INS_PLAN_NO IN ( SELECT MAX(INS_PLAN_NO) 
                                                                                         FROM CO_INSPLAN_T CC 
                                                                                           WHERE AA.INS_PLAN_NO = CC.INS_PLAN_NO 
@@ -1502,5 +1502,143 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
 		UPDATE op_eqp_header_t
 		SET address = #address#
 		WHERE eqp_no = #eqp_no#
-	</update>
+	</update>	
+	
+<!-- < 지중순시 모바일 시스템 > 설비리스트추출 	 -->
+	<select id="schedule.getFacilityList" parameterClass="box" resultClass="box">
+	SELECT *
+  		FROM (SELECT A.FST_BIZPLC_CD
+             , A.SCD_BIZPLC_CD
+             , A.UNITY_BIZPLC_CD
+             , A.FNCT_LC_NO
+             , A.FNCT_LC_DTLS
+             , A.FNCT_LC_TY
+             , A.FNCT_LC_TY_NM
+             , A.EQP_NO
+             , A.EQP_NM
+             , A.EQP_TY_CD
+             , A.EQP_TY_CD_NM
+             , A.BGNDT
+             , A.MAKR
+             , ROWNUM AS TOWER_IDX
+             , '' LATITUDE
+             , '' LONGITUDE
+             , '' CONT_NUM
+             , '' ADDRESS
+          FROM (  SELECT /*+ USE_NL(A B) INDEX(A OP_EQP_HEADER_T_IDX4) */
+                        A.FST_BIZPLC_CD
+                       , A.SCD_BIZPLC_CD
+                       , A.UNITY_BIZPLC_CD
+                       , A.FNCT_LC_NO
+                       , A.EQP_NO
+                       , A.EQP_NM
+                       , A.EQP_TY_CD
+                       , A.EQP_TY_CD_NM
+                       , A.BGNDT
+                       , A.MAKR
+                       , A.MNFCT_YEAR || '.' || A.MNFCT_MT AS MNFCT_YYYYMM
+                       , NVL (A.INTWR_NO, '0') AS INTWR_NO
+                       , B.FNCT_LC_DTLS
+                       , B.FNCT_LC_TY
+                       , B.FNCT_LC_TY_NM
+                       , A.VOLT
+                    FROM OP_EQP_HEADER_T A, OP_FUNCTION_HEADER_T B
+                   WHERE     A.FNCT_LC_NO = B.FNCT_LC_NO
+                         AND B.FNCT_LC_TY IN ('FL07', 'FL08', 'FL09')
+                         AND A.FST_BIZPLC_CD = #fst_bizplc_cd#
+                         AND A.SCD_BIZPLC_CD = #scd_bizplc_cd#
+                         AND A.EQP_CTGRY = 'A'
+                         AND A.UNITY_BIZPLC_CD IN
+                                ('9110010', '9110020', '9110030')
+                ORDER BY UNITY_BIZPLC_CD
+                       , FNCT_LC_DTLS
+                       , EQP_TY_CD_NM
+                       , EQP_NM) A) B
+	</select>
+	
+<!-- < 지중순시 모바일 시스템 > 정기순시/예방순시 - 유압리스트 추출 	 -->
+	<select id="schedule.getOileqpList" parameterClass="box" resultClass="box">
+	       SELECT UNITY_INS_NO
+		       , INS_PLAN_NO
+		       , FNCT_LC_NO
+		       , FNCT_LC_DTLS
+		       , EQP_NO
+		       , EQP_NM 
+		       , UPTLVL_UPLMT
+		       , UPTLVL_LWLT
+		       , UPTLVL_INTRCP
+		       , A_PHS
+		       , B_PHS
+		       , C_PHS
+		       , TMPRT
+		       , MNG_01
+		       , MNG_02
+		       , INS_RESULT_101
+		       , INS_RESULT
+		       , INS_TY_CD
+		       , A101
+		       , B101
+		       , C101
+		       , D101
+		       , IMPRMN_REQUST_NO
+		       , SD, '' TOWER_IDX, '' CONT_NUM, '' SN, '' TTM_LOAD
+		    FROM (
+		        SELECT /*+ USE_NL(FH EH OT) */
+		                '0' AS UNITY_INS_NO
+		               , '20200100000000000246' AS INS_PLAN_NO
+		               , FH.FNCT_LC_NO
+		               , FH.FNCT_LC_DTLS
+		               , EH.EQP_NO
+		               , EH.EQP_NM EQP_NM
+		               , EH.UPLMT AS UPTLVL_UPLMT
+		               , EH.LWLT AS UPTLVL_LWLT
+		               , EH.INTRCP AS UPTLVL_INTRCP
+		               , EH.SD
+		               , '' AS A_PHS
+		               , '' AS B_PHS
+		               , '' AS C_PHS
+		               , '' AS TMPRT
+		               , EH.MNG_01
+		               , EH.MNG_02
+		               , '004' AS INS_RESULT_101
+		               , '004' AS INS_RESULT
+		               , '040' AS INS_TY_CD
+		               , '0' AS A101
+		               , '0' AS B101
+		               , '0' AS C101
+		               , '1' AS D101
+		               , '' AS IMPRMN_REQUST_NO
+		            FROM OP_FUNCTION_HEADER_T FH, OP_EQP_HEADER_T EH
+		           WHERE     FH.FNCT_LC_NO = EH.FNCT_LC_NO
+		                 AND FH.FST_BIZPLC_CD = #fst_bizplc_cd#
+		                 AND FH.SCD_BIZPLC_CD = #scd_bizplc_cd#
+		                 AND FH.FNCT_LC_STTUS &lt;&gt; 'D'
+		                 AND FH.FNCT_LC_TY = 'FL07'
+		                 AND FH.FNCT_LC_NO IN
+		                        (SELECT /*+ USE_NL(FH EH EI) */
+		                               DISTINCT FH.FNCT_LC_NO
+		                           FROM OP_FUNCTION_HEADER_T FH
+		                              , OP_EQP_HEADER_T EH
+		                              , OP_EQP_ITEM_T EI
+		                          WHERE     FH.FNCT_LC_NO = EH.FNCT_LC_NO
+		                                AND FH.FST_BIZPLC_CD = #fst_bizplc_cd#
+		                                AND FH.SCD_BIZPLC_CD = #scd_bizplc_cd#
+		                                AND EH.EQP_NO = EI.EQP_NO
+		                                AND FH.FNCT_LC_TY = 'FL07'
+		                                AND EH.EQP_STTUS &lt;&gt; 'D'
+		                                AND EH.EQP_TY_CD = 'T007'
+		                                AND EI.CHARTR_CD = 'PM-A-0406'
+		                                AND EI.CHARTR_VALUE IN
+		                                       ('850597'
+		                                      , '006679'
+		                                      , '850594'
+		                                      , '006683'
+		                                      , '850596'))
+		                 AND EH.EQP_TY_CD = 'T011')
+		ORDER BY SD
+		       , EQP_NM
+		       , MNG_01
+		       , MNG_02
+	</select>
+	
 </sqlMap>

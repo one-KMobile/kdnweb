@@ -1037,5 +1037,33 @@ public class KdnApiDAO extends KdnSqlMapClient {
     public int setAddress(Box box) throws Exception {
     	return update("eqpDAO.setAddress", box);
     }
+    
+    /**
+	 * < 지중순시 모바일 시스템 > 정기순시/예방순시 - 유압리스트 추출
+	 * @param [fst_bizplc_cd, scd_bizplc_cd]
+	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
+	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+	 * @author [정현도] 
+	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+	 */  
+    @SuppressWarnings("unchecked")
+	public List<Box> getOileqpList(Box box) throws Exception {
+    	List<Box> list = list("schedule.getOileqpList", box);
+    	return list;
+    }
+    
+    /**
+	 * < 지중순시 모바일 시스템 > 설비검색
+	 * @param [fst_bizplc_cd, scd_bizplc_cd]
+	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
+	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+	 * @author [정현도] 
+	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+	 */  
+    @SuppressWarnings("unchecked")
+	public List<Box> apiSearchFacilityList(Box box) throws Exception {
+    	List<Box> list = list("schedule.getFacilityList", box);
+    	return list;
+    }
 }
 

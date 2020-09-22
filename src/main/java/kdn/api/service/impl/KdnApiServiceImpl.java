@@ -143,17 +143,17 @@ public class KdnApiServiceImpl extends AbstractServiceImpl implements
     	  List<Box> list = kdnApiDAO.getTracksInSchedule(box);
     	  return list;
       }
-      
-      /**
-  	 * 회선 테이블 검색(전선접속개소, 접지저항)
-  	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
-  	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
-  	 * @author [정현도] 
-  	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
-  	 */  
-  	public List<Box> getCircuitList(Box box) throws Exception {
-    	  return kdnApiDAO.getCircuitList(box);
-      }
+    
+    /**
+	 * 회선 테이블 검색(전선접속개소, 접지저항)
+	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
+	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+	 * @author [정현도] 
+	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+	 */  
+	public List<Box> getCircuitList(Box box) throws Exception {
+  	  return kdnApiDAO.getCircuitList(box);
+    }
   	
     /**
 	 * 불량애자 검색
@@ -1048,4 +1048,27 @@ public class KdnApiServiceImpl extends AbstractServiceImpl implements
     public int setAddress(Box box) throws Exception {
     	return kdnApiDAO.setAddress(box);
     }
+    
+    /**
+	 *  < 지중순시 모바일 시스템 > 정기순시/예방순시 - 유압리스트 추출
+	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
+	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+	 * @author [정현도] 
+	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+	 */  
+	public List<Box> getOileqpList(Box box) throws Exception {
+  	  return kdnApiDAO.getOileqpList(box);
+    }
+	    
+    /**
+	 *  < 지중순시 모바일 시스템 > 설비검색
+	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
+	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+	 * @author [정현도] 
+	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+	 */  
+	public List<Box> apiSearchFacilityList(Box box) throws Exception {
+  	  return kdnApiDAO.apiSearchFacilityList(box);
+    }
+		
 }
