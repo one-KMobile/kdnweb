@@ -287,8 +287,8 @@ public class KdnApiController {
             	box.put("scd_bizplc_cd", loginMethod.getSessionKey(request).getString("scd_bizplc_cd"));
 
             	//사업소 정보 호출
-            	Box bizplcBox = kdnApiService.getBizcode(box);
-            	box.put("fnct_lc_ty_nm", bizplcBox.getString("FNCT_LC_TY_NM"));
+            	//Box bizplcBox = kdnApiService.getBizcode(box);
+            	//box.put("fnct_lc_ty_nm", bizplcBox.getString("FNCT_LC_TY_NM"));
             	//선로목록 호출
             	List<Box> tracksList = kdnApiService.getTracksList(box);
             	modelAndView.addObject("tracksList", tracksList);
@@ -1893,6 +1893,57 @@ public class KdnApiController {
                 }
                 
             }
+
+            
+            /**
+        	 * < 지중순시 모바일 시스템 > 스케줄 결과검색
+        	 * @param - box[fnct_lc_no, ins_ty_cd] 
+        	 * @return list - [스케줄 결과검색]
+        	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+        	 * @author [정현도] 
+        	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+        	 * @exception api검토
+        	 */
+            @RequestMapping(value="/api/under/inspection/result/schedule.*", method={RequestMethod.POST,RequestMethod.GET})
+            public ModelAndView apiInspectionResultSchedule(ModelMap model, HttpServletRequest request) {
+            	ModelAndView modelAndView = new ModelAndView(new MappingJacksonJsonView());
+                Box box = BoxUtil.getBox(request);
+                
+                /*if("".equals(box.getString("fnct_lc_no"))) {
+                	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL_REQUIRE);
+                	return modelAndView;
+                }*/
+                try {
+                	/*if(!loginMethod.isExistSessionKey(request)) {
+                		modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL_SESSION);
+                		return modelAndView;
+                	}*/
+               	 box.put("user_id", loginMethod.getSessionKey(request).getString("user_id"));
+               	 List<Box> resultScheduleList = null;
+               	if("true".equals(box.getString("first"))) {
+               		//스케쥴 처리
+               		resultScheduleList = kdnApiMethod.getUnderScheduleMethod(box, request);
+               	}else {
+               		String insPlanNo = kdnApiService.getLatestContract(box).getString("INS_PLAN_NO"); //최신스케줄20140300000000000293
+                    	//System.out.println("################# insPlanNo ################# "+insPlanNo);
+               		if(!box.getString("insplan_no").equals(insPlanNo)) { // 박스 20140300000000000226
+               			//스케쥴 처리
+               			resultScheduleList = kdnApiMethod.getUnderScheduleMethod(box, request);
+               		}
+               	}
+               	
+                	modelAndView.addObject("schedule", resultScheduleList);
+                	//modelAndView.addObject("planno", "20140300000000000226");
+                	//System.out.println("################# one test ################# "+resultScheduleList);
+                	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_SUCCESS);
+                	return modelAndView;
+                }catch(Exception e) {
+                	e.printStackTrace();
+                	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL);
+                	return modelAndView;
+                }
+            }
+            
             /**
           	 * < 지중순시 모바일 시스템 > 설비검색
           	 * @param - box[fnct_lc_no, eqp_nm] 
@@ -1978,6 +2029,44 @@ public class KdnApiController {
                   	return modelAndView;
                   }
               }
-              
+
+              /**
+           	 * < 지중순시 모바일 시스템 > 선로목록
+           	 * @param - box[ 
+           	 * @return list - [선로 목록]
+           	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+           	 * @author [정현도] 
+           	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+           	 * @exception api검토
+           	 */
+               @RequestMapping(value="/api/under/tracks/list.*", method={RequestMethod.POST,RequestMethod.GET})
+               public ModelAndView apiUnderTracksList(ModelMap model, HttpServletRequest request) {
+               	ModelAndView modelAndView = new ModelAndView(new MappingJacksonJsonView());
+                   Box box = BoxUtil.getBox(request);
+                   
+                   try {
+                   	/*if(!loginMethod.isExistSessionKey(request)) {
+                   		modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL_SESSION);
+                   		return modelAndView;
+                   	}*/
+                   	/*box.put("fst_bizplc_cd", loginMethod.getSessionKey(request).getString("fst_bizplc_code"));
+                  	box.put("scd_bizplc_cd", loginMethod.getSessionKey(request).getString("scd_bizplc_code"));*/
+                  	box.put("fst_bizplc_cd", loginMethod.getSessionKey(request).getString("fst_bizplc_cd"));
+                  	box.put("scd_bizplc_cd", loginMethod.getSessionKey(request).getString("scd_bizplc_cd"));
+
+                  	//사업소 정보 호출
+                  	//Box bizplcBox = kdnApiService.getBizcode(box);
+                  	//box.put("fnct_lc_ty_nm", bizplcBox.getString("FNCT_LC_TY_NM"));
+                  	//선로목록 호출
+                  	List<Box> tracksList = kdnApiService.getUnderTracksList(box);
+                  	modelAndView.addObject("tracksList", tracksList);
+                   	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_SUCCESS);
+                   	return modelAndView;
+                   }catch(Exception e) {
+                  	e.printStackTrace(); 
+                   	modelAndView.addObject(ConstantValue.RESULT_CODE, ConstantValue.RESULT_FAIL);
+                   	return modelAndView;
+                   }
+               }
               
 }

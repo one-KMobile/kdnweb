@@ -1070,5 +1070,31 @@ public class KdnApiServiceImpl extends AbstractServiceImpl implements
 	public List<Box> apiSearchFacilityList(Box box) throws Exception {
   	  return kdnApiDAO.apiSearchFacilityList(box);
     }
-		
+    
+    /**
+	 * < 지중순시 모바일 시스템 > 선로의 스케줄 가져오기
+	 * @param - box - [CYCLE_YM, INS_TY_CD]
+	 * @return list - [순시목록 스케쥴]
+	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+	 * @author [정현도] 
+	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+	 */       
+
+    public List<Box> getUnderTracksInSchedule(Box box) throws Exception {
+  	  List<Box> list = kdnApiDAO.getUnderTracksInSchedule(box);
+  	  return list;
+    }
+
+    /**
+	 * < 지중순시 모바일 시스템 > 순시 선로 목록 확인
+	 * @param - box - [fnct_lc_ty_nm, fst_bizplc_cd, sch_bizplc_cd]
+	 * @return list - [사업소코드 정보]
+	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+	 * @author [정현도] 
+	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+	 */     
+    public List<Box> getUnderTracksList(Box box) throws Exception {
+  	  List<Box> list = kdnApiDAO.getUnderTracksList(box);
+  	  return list;
+    }
 }

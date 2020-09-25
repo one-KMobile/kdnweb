@@ -1039,6 +1039,20 @@ public class KdnApiDAO extends KdnSqlMapClient {
     }
     
     /**
+	 * < 지중순시 모바일 시스템 > 선로의 스케줄 가져오기
+	 * @param - box - [CYCLE_YM, INS_TY_CD]
+	 * @return list - [순시목록 스케쥴]
+	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+	 * @author [정현도] 
+	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+	 */       
+    @SuppressWarnings("unchecked")
+	public List<Box> getUnderTracksInSchedule(Box box) throws Exception {
+    	List<Box> list = list("schedule.getUnderTracksInSchedule", box);
+    	return list;
+    }
+    
+    /**
 	 * < 지중순시 모바일 시스템 > 정기순시/예방순시 - 유압리스트 추출
 	 * @param [fst_bizplc_cd, scd_bizplc_cd]
 	 * @return list - [sub_schedule_idx, fnct_lc_no, fnct_lc_dtls, position]
@@ -1065,5 +1079,20 @@ public class KdnApiDAO extends KdnSqlMapClient {
     	List<Box> list = list("schedule.getFacilityList", box);
     	return list;
     }
+    
+    /**
+	 * < 지중순시 모바일 시스템 > 순시 선로 목록 확인 
+	 * @param - box - [fnct_lc_ty_nm, fst_bizplc_cd, sch_bizplc_cd]
+	 * @return list - [사업소코드 정보]
+	 * @throws [예외명] [설명] // 각 예외 당 하나씩 
+	 * @author [정현도] 
+	 * @fix(<수정자명>) [yyyy.mm.dd]: [수정 내용]
+	 */     
+    @SuppressWarnings("unchecked")
+	public List<Box> getUnderTracksList(Box box) throws Exception {
+    	List<Box> list = list("schedule.getUnderTracksList", box);
+    	return list;
+    }
+    
 }
 

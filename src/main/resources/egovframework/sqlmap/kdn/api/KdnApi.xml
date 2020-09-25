@@ -94,9 +94,10 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
 					, fst_bizplc_cd
 					, scd_bizplc_cd 
 		FROM op_function_header_t
-		WHERE fnct_lc_ty = 'FL05'
+		WHERE fnct_lc_ty in ('FL07', 'FL08', 'FL09')
         AND fnct_lc_sttus = 'I'
-		AND fnct_lc_dtls LIKE '%' || '군포' || '%'
+        <!-- fnct_lc_ty = 'FL05'
+		AND fnct_lc_dtls LIKE '%' || '군포' || '%' -->
 		
 	</select>
 
@@ -1555,7 +1556,97 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
                        , EQP_TY_CD_NM
                        , EQP_NM) A) B
 	</select>
-	
+
+<!-- < 지중순시 모바일 시스템 > 선로의 스케줄 가져오기 >> 순시종류별	 -->
+	<select id="schedule.getUnderTracksInSchedule" parameterClass="box" resultClass="box"> 
+                SELECT * FROM (
+                            SELECT INS_PLAN_NO
+                                    , ROW_NUMBER() OVER(ORDER BY FNCT_LC_NO) LINENUM
+                                    , TOWER_IDX
+                                    , CYCLE_YM
+                                    , INS_SN
+                                    , FNCT_LC_NO
+                                    , FNCT_LC_DTLS
+                                    , INS_TY_CD
+                                    , INS_TY_CD_COUNT <!-- 항공등 개수 -->
+                                    , NM, EQP_NO
+                                    , EQP_NM
+                                    , LATITUDE
+                                    , LONGITUDE 
+                                    , UNITY_INS_NO
+                                    , ADDRESS 
+                            FROM ( SELECT INSPLAN.INS_PLAN_NO
+                                                , INSPLAN.CYCLE_YM
+                                                , INSPLAN.INS_SN
+                                                , INSPLAN.INS_TY_CD 
+                                                , CASE WHEN INSPLAN.INS_TY_CD = '024' OR INSPLAN.INS_TY_CD = '025' THEN 
+                                                    (SELECT COUNT(*) FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD IN ('PM-A-0102','PM-A-0103','PM-A-0104') AND OEI.CHARTR_VALUE > 0) 
+                                                ELSE 0 END INS_TY_CD_COUNT
+                                                , INSPLAN.NM
+                                                , INSPLAN.UNITY_INS_NO
+                                                ,TRACKS.FNCT_LC_NO
+                                                , TRACKS.FNCT_LC_DTLS
+                                                ,TOWER.EQP_NO
+                                                , TOWER.EQP_NM
+                                                , (SELECT OEI.CHARTR_VALUE FROM OP_EQP_ITEM_T OEI WHERE OEI.EQP_NO = TOWER.EQP_NO AND OEI.CHARTR_CD = 'PM-A-0002') AS TOWER_IDX
+                                                , TOWER.LATITUDE
+                                                , TOWER.LONGITUDE   
+                                                , TOWER.ADDRESS 
+                                      FROM (SELECT AA.INS_PLAN_NO
+                                                          , BB.CYCLE_YM
+                                                          , decode(BB.INS_TY_CD, '039','001','040','003',BB.INS_TY_CD) INS_TY_CD
+                                                          , BB.FNCT_EQP_NO AS FNCT_LC_NO
+                                                          , BB.INS_SN
+                                                          , BB.UNITY_INS_NO
+                                                          <!-- , REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(DD.CODE_NAME,'항공장애등등구확인점검','장애등등구'),'항공장애등점검','장애등'),'전선접속개소점검','전선접속개소'),'접지저항측정','접지저항'),'불량애자검출','불량애자') NM-->
+                                                          ,DD.CODE_NAME NM
+                                                FROM CO_INSPLAN_T AA INNER JOIN CO_INSPLAN_EQP_T BB ON AA.INS_PLAN_NO = BB.INS_PLAN_NO      
+                                                <!--AND BB.EQP_TY_CD = 'T001'-->
+                                                AND BB.CYCLE_YM BETWEEN #start_date# AND #end_date# 
+                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TYPE' AND DD.CODE_ID = BB.INS_TY_CD 
+                                                WHERE AA.INS_PLAN_NO IN (SELECT MAX(INS_PLAN_NO) 
+                                                                                        FROM CO_INSPLAN_T CC 
+                                                                                          WHERE AA.INS_PLAN_NO = CC.INS_PLAN_NO 
+                                                                                          AND CC.FST_BIZPLC_CD =  #fst_bizplc_cd#
+                                                                                          AND AA.SCD_BIZPLC_CD =  #scd_bizplc_cd#
+                                                                                        ) 
+                                
+                                                UNION 
+                                
+                                                    SELECT AA.INS_PLAN_NO
+                                                                , BB.CYCLE_YM
+                                                                , decode(BB.INS_TY_CD, '039','001','040','003',BB.INS_TY_CD) INS_TY_CD
+                                                                , BB.FNCT_EQP_NO AS FNCT_LC_NO
+                                                                , BB.INS_SN
+                                                                , BB.UNITY_INS_NO
+                                                                <!-- , REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(DD.CODE_NAME,'항공장애등등구확인점검','장애등등구'),'항공장애등점검','장애등'),'전선접속개소점검','전선접속개소'),'접지저항측정','접지저항'),'불량애자검출','불량애자') NM-->
+                                                          		,DD.CODE_NAME NM
+                                                FROM CO_INSPLAN_T AA INNER JOIN CO_INSPLAN_EQP_T BB ON AA.INS_PLAN_NO = BB.INS_PLAN_NO      
+                                                <!--AND BB.EQP_TY_CD = 'T001'-->
+                                                AND BB.CYCLE_YM BETWEEN #start_date# AND #end_date# 
+                                                INNER JOIN M_CODE_T DD ON DD.GROUP_CODE_ID = 'INS_TYPE' AND DD.CODE_ID = BB.INS_TY_CD 
+                                                WHERE AA.INS_PLAN_NO IN ( SELECT MAX(INS_PLAN_NO) 
+                                                                                        FROM CO_INSPLAN_T CC 
+                                                                                          WHERE AA.INS_PLAN_NO = CC.INS_PLAN_NO 
+                                                                                          AND CC.FST_BIZPLC_CD =  #fst_bizplc_cd#
+                                                                                          AND CC.SCD_BIZPLC_CD =  #scd_bizplc_cd#
+                                                                                        ) 
+                                                AND EXISTS (SELECT CC.FNCT_LC_NO 
+                                                                FROM OP_FUNCTION_ITEM_T CC 
+                                                                WHERE BB.FNCT_EQP_NO = CC.FNCT_LC_NO 
+                                                                AND CC.CHARTR_CD = 'PM-A-0066'
+                                                                )
+                                                  ) INSPLAN INNER JOIN op_function_header_t TRACKS ON INSPLAN.FNCT_LC_NO = TRACKS.FNCT_LC_NO  
+                                                      INNER JOIN op_eqp_header_t TOWER ON TRACKS.FNCT_LC_NO = TOWER.FNCT_LC_NO 
+                                                      <!--AND TOWER.EQP_TY_CD = 'T001' -->
+                                                      AND TOWER.FST_BIZPLC_CD =  #fst_bizplc_cd#
+                                                      AND TOWER.SCD_BIZPLC_CD =  #scd_bizplc_cd#
+                                    ) TT
+                                WHERE eqp_no is not null 
+                            ORDER BY FNCT_LC_NO, CYCLE_YM, TO_NUMBER(TOWER_IDX), INS_TY_CD
+                )page 
+	</select>
+		
 <!-- < 지중순시 모바일 시스템 > 정기순시/예방순시 - 유압리스트 추출 	 -->
 	<select id="schedule.getOileqpList" parameterClass="box" resultClass="box">
 	       SELECT UNITY_INS_NO
@@ -1639,6 +1730,18 @@ ON CD.GROUP_CODE_ID = GCD.GROUP_CODE_ID AND GCD.USE_YN = 'Y'
 		       , EQP_NM
 		       , MNG_01
 		       , MNG_02
+	</select>
+	
+	<select id="schedule.getUnderTracksList" parameterClass="box" resultClass="box">
+		SELECT fnct_lc_no 
+					, fnct_lc_dtls 
+		FROM op_function_header_t
+		WHERE fnct_lc_ty in ('FL06','FL07','FL08','FL09')
+        AND fnct_lc_sttus = 'I'
+		AND fst_bizplc_cd = #fst_bizplc_cd# 
+		AND scd_bizplc_cd = #scd_bizplc_cd#
+		AND fnct_lc_dtls &lt;&gt; 'test'
+		ORDER BY fnct_lc_dtls
 	</select>
 	
 </sqlMap>

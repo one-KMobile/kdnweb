@@ -1021,4 +1021,36 @@ public class KdnApiMethod {
     	box.put("address", address);
     	kdnApiService.setAddress(box);
 	}
+	
+/* < 지중순시 모바일 시스템 > 스케줄 결과검색*/
+	public List<Box> getUnderScheduleMethod(Box box, HttpServletRequest request) throws Exception {
+		box.put("fst_bizplc_cd", loginMethod.getSessionKey(request).getString("fst_bizplc_cd"));
+     	box.put("scd_bizplc_cd", loginMethod.getSessionKey(request).getString("scd_bizplc_cd"));
+
+     	System.out.println("################# cycle_ym ################# "+box.getString("cycle_ym"));
+     	//날짜 계산
+     	if("".equals(box.getString("cycle_ym"))) {
+     		Calendar cal = Calendar.getInstance();
+     		Object year = cal.get(Calendar.YEAR);
+     		box.put("start_date", year.toString().concat("01"));
+     		box.put("end_date", year.toString().concat("12"));
+     	}else {
+     		box.put("start_date", box.getString("cycle_ym"));
+     		box.put("end_date", box.getString("cycle_ym"));
+     	}
+     	System.out.println("################# start_date ################# "+box.getString("start_date"));
+     	System.out.println("################# end_date ################# "+box.getString("end_date"));
+     	//선로의 의한 스케줄정보 호출
+     	List<Box> scheduleList = kdnApiService.getUnderTracksInSchedule(box);
+     	/*for(int i=0; i<scheduleList.size(); i++) {
+     		Box scheduleBox = scheduleList.get(i);
+     		String address = getAddressByLatitudeLongitude(scheduleBox.getString("LATITUDE"), scheduleBox.getString("LONGITUDE"));
+     		//scheduleBox.put("FST_BIZPLC_NAME", sessionBox.getString("fst_bizplc_name"));
+     		//scheduleBox.put("SCD_BIZPLC_NAME", sessionBox.getString("scd_bizplc_name"));
+     		scheduleBox.put("ADDRESS", address);
+     		resultScheduleList.add(scheduleBox);
+     	}*/
+     	return scheduleList;
+	}
+	
 }
